@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  python_service:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+      args:
+        UID: 1002
+        GID: 1005
+    container_name: python_service
+    restart: unless-stopped
+    expose:
+      - "8001"
+    networks:
+      - my-shared-network
+    volumes:
+      # 🔹 MAPEAMENTO EXATO: Sua pasta física vira a pasta interna do container
+      - ./app/mad-api:/app/mad-api
+      # 🔹 MAPEAMENTO DO VOLUME: Conteúdo estático isolado e persistente
+      - graficos_data:/app/mad-api/static 
+    
+    # Define a pasta onde o container começará a executar os comandos
+    working_dir: /app/mad-api
+    
+    # ... (restante do seu serviço python_service)
+    command: >
+      sh -c "mkdir -p /app/mad-api/static/estatisticas/img &&
+             mkdir -p /app/mad-api/static/regras/img &&
+             mkdir -p /app/mad-api/static/nuvem_palavaras/img &&
+             chmod -R 777 /app/mad-api/static &&
+             uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
+
+volumes:
+  graficos_data:
+
+networks:
+  my-shared-network:
+    external: true

@@ -1,0 +1,17 @@
+# Python compilados
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Ambientes virtuais locais
+.venv/
+venv/
+ENV/
+
+# 🚨 SEGURANÇA MÁXIMA: Nunca versionar o arquivo de senhas reais
+.env
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db

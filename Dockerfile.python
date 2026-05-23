@@ -1,0 +1,48 @@
+FROM python:3.11-slim
+
+# =========================
+# UID/GID (Mantendo o padrão do seu usuário local)
+# =========================
+ARG UID=1002
+ARG GID=1005
+
+# Cria grupo e usuário para evitar rodar como root no container
+RUN groupadd -g ${GID} appgroup \
+    && useradd -u ${UID} -g ${GID} -m appuser
+
+# Evita prompts interativos do sistema operacional
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Evita que o Python gere arquivos .pyc e permite ver os logs em tempo real
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Instala ferramentas necessárias para o spaCy (git) e mlxtend (gfortran/blas)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libffi-dev \
+    libssl-dev \
+    default-libmysqlclient-dev \
+    git \
+    gfortran \
+    libopenblas-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 🔹 DEFINE O CAMINHO EXATO QUE VOCÊ QUER DENTRO DO CONTAINER
+WORKDIR /app/mad-api
+
+# Copia o seu arquivo de requisitos local para dentro do caminho correto
+COPY app/mad-api/requirements.txt .
+
+# Atualiza e instala todas as dependências do seu requirements.txt
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -r requirements.txt
+
+# 🔹 COPIA O SEU CÓDIGO FONTE LOCAL DIRETAMENTE PARA A RAIZ /app/mad-api DO CONTAINER
+COPY app/mad-api/ .
+
+# Garante que o usuário do container gerencie essa pasta com segurança
+RUN chown -R appuser:appgroup /app/mad-api
+
+USER appuser
