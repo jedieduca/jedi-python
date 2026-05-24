@@ -19,17 +19,18 @@ services:
       - ./app/mad-api:/app/mad-api
       # 🔹 MAPEAMENTO DO VOLUME: Conteúdo estático isolado e persistente
       - graficos_data:/app/mad-api/static 
-    
     # Define a pasta onde o container começará a executar os comandos
     working_dir: /app/mad-api
     
     # ... (restante do seu serviço python_service)
+    # command: >
+    #   sh -c "mkdir -p /app/mad-api/static/estatisticas/img &&
+    #          mkdir -p /app/mad-api/static/regras/img &&
+    #          mkdir -p /app/mad-api/static/nuvem_palavaras/img &&
+    #          chmod -R 777 /app/mad-api/static &&
+    #          uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
     command: >
-      sh -c "mkdir -p /app/mad-api/static/estatisticas/img &&
-             mkdir -p /app/mad-api/static/regras/img &&
-             mkdir -p /app/mad-api/static/nuvem_palavaras/img &&
-             chmod -R 777 /app/mad-api/static &&
-             uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
+      sh -c "mkdir -p /app/mad-api/static/estatisticas/img && mkdir -p /app/mad-api/static/regras/img && mkdir -p /app/mad-api/static/nuvem_palavaras/img && chmod -R 777 /app/mad-api/static && gunicorn main:app --bind 0.0.0.0:8001 --workers 4 --worker-class uvicorn.workers.UvicornWorker --timeout 300"
 
 volumes:
   graficos_data:

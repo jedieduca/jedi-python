@@ -45,4 +45,8 @@ COPY app/mad-api/ .
 # Garante que o usuário do container gerencie essa pasta com segurança
 RUN chown -R appuser:appgroup /app/mad-api
 
+# Define que a partir de agora o container roda com o usuário seguro e limitado
 USER appuser
+
+# 🔹 ATUALIZADO: Comando padrão ajustado para a infraestrutura Gunicorn
+CMD ["gunicorn", "main:app", "--bind", "0.0.0.0:8001", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--timeout", "300"]
