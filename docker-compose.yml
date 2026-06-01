@@ -1,4 +1,4 @@
-version: '3.8'
+#version: '3.8'
 
 services:
   python_service:
@@ -13,7 +13,7 @@ services:
     expose:
       - "8001"
     networks:
-      - my-shared-network
+      - jedieduca-network
     volumes:
       # 🔹 MAPEAMENTO EXATO: Sua pasta física vira a pasta interna do container
       - ./app/mad-api:/app/mad-api
@@ -36,5 +36,5 @@ volumes:
   graficos_data:
 
 networks:
-  my-shared-network:
+  jedieduca-network:
     external: true

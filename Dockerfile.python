@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     gfortran \
     libopenblas-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*cd 
 
 # 🔹 DEFINE O CAMINHO EXATO QUE VOCÊ QUER DENTRO DO CONTAINER
 WORKDIR /app/mad-api
@@ -47,6 +47,9 @@ RUN chown -R appuser:appgroup /app/mad-api
 
 # Define que a partir de agora o container roda com o usuário seguro e limitado
 USER appuser
+
+# Força o Matplotlib a construir o cache de fontes durante o Build do container
+RUN python -c "import matplotlib.pyplot"
 
 # 🔹 ATUALIZADO: Comando padrão ajustado para a infraestrutura Gunicorn
 CMD ["gunicorn", "main:app", "--bind", "0.0.0.0:8001", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--timeout", "300"]

@@ -195,7 +195,7 @@ async def get_perfil_noticia(
         # 2. Construímos a URL da imagem
         base_url = settings.URL_BASE
         timestamp = int(time.time())
-        print(f"/{path_relativo}?v={timestamp}")
+        # print(f"/{path_relativo}?v={timestamp}")
         link = {
             "grafico_perfil_noticia": f"{base_url}/{path_relativo}?v={timestamp}"
         }
