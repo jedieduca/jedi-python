@@ -17,7 +17,7 @@ app = FastAPI(
     version='0.0.1',
     description='Uma API inteligente para análise de dados oriundos do JEDI Educa.',
     # 🔹 DESCOMENTADO E ATIVADO: Essencial para o NGINX rotear o /api/docs sem dar 404
-    root_path="/api"
+    # root_path="/"
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
