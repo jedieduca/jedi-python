@@ -64,7 +64,11 @@ async def get_palavras(
             "texto_completo": texto_original,
             "link_grafico": link 
         }
-    
+    except HTTPException:
+        # Re-lança exceções HTTP intencionais (ex: 404)
+        raise
     except Exception as e:
+        # Imprime a pilha de erros no console da aplicação para facilitar o debug futuro
+        print(f"Erro detalhado no get_palavras: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
         

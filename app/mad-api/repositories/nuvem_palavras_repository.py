@@ -12,7 +12,7 @@ class NuvemPalavrasRepository:
         query = (select(
             PerguntasModel.id,
             PerguntasModel.pergunta,
-            PerguntasModel.respcerta,
+            PerguntasModel.resp_certa,
             CategoriaModel.descricao.label('categoria')
         )
         .join(PerguntasCategoriasModel, PerguntasModel.id == PerguntasCategoriasModel.id_pergunta)
@@ -21,8 +21,8 @@ class NuvemPalavrasRepository:
         # Aplicação dos filtros
         if filters.categoria:
             query = query.where(CategoriaModel.descricao == filters.categoria)
-        if filters.respcerta:
-            query = query.where(PerguntasModel.respcerta == filters.respcerta)
+        if filters.resp_certa:
+            query = query.where(PerguntasModel.resp_certa == filters.resp_certa)
 
         result = await self.db.execute(query)
         

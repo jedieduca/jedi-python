@@ -8,11 +8,11 @@ class PerguntaBaseSchema(BaseModel):
     id: Optional[int] = None
     id_tema: int
     pergunta: str
-    respcerta: str
-    resp2: Optional[str]
-    resp3: Optional[str]
-    resp4: Optional[str]
-    caminhoimagem: str
+    resp_certa: Optional[str] = None
+    resp_2: Optional[str]
+    resp_3: Optional[str]
+    resp_4: Optional[str]
+    caminho_imagem: str
     tempo_leitura_adulto: int
     tempo_leitura_infantil: int
     numero_palavras: int
@@ -24,12 +24,12 @@ class PerguntaBaseSchema(BaseModel):
 class NuvemFilterSchema(BaseModel):
         
     categoria: Optional[str] = None
-    respcerta: Optional[str] = None
+    resp_certa: Optional[str] = None
 
 class NuvemItemSchema(BaseModel):
     id: int
     pergunta: str
-    respcerta: str
+    resp_certa: Optional[str] = None
     categoria: str
 
 class NuvemPalavraSchema(BaseModel):

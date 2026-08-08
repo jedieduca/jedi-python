@@ -17,7 +17,7 @@ class VwAprioriModel(settings.DBBaseModelJEDi):
     auto_avaliacao = Column(String(14))
     avaliacao_jogo = Column(String(14))
     tutor = Column(Integer)
-    categoria = Column(String(30))
+    categoria = Column(String(300))
     tema = Column(String(50))
     numero_partidas = Column(Integer)
     tempo_gasto: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2))
