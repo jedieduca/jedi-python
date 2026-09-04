@@ -9,7 +9,7 @@ class VwAprioriSchema(BaseModel):
     escola: str
     turma: str
     login: str
-    jogador: str
+    nome: str
     dt_jogo: date
     idade: int
     auto_avaliacao: str

@@ -11,7 +11,7 @@ class VwAprioriModel(settings.DBBaseModelJEDi):
     escola = Column(String(150))
     turma = Column(String(15))
     login = Column(String(12))
-    jogador = Column(String(12))
+    nome = Column(String(100))
     dt_jogo: Mapped[date] = mapped_column(Date)
     idade = Column(Integer)
     auto_avaliacao = Column(String(14))
