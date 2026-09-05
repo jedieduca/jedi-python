@@ -87,12 +87,11 @@ class GraficosService:
     @staticmethod
     async def criar_grafico_partida(data, path: str, filters: Any = None):
         try:
-            # Transformação de dados (Camada de Serviço)
+            # Transformação de dados
             df = await service.transforma_em_dataframe(data)
 
             titulo = await service.montar_titulo_com_filtros("Desempenho Médio: Partida Inicial vs Partida Final", filters)
             
-            # Mapeamento para nomes amigáveis na legenda
             mapping = {'PI': 'Partida Inicial', 'PF': 'Partida Final'}
             
             # Transformação de Wide para Long
@@ -103,33 +102,18 @@ class GraficosService:
                 value_name='media'
             )
             
-            # Substitui os nomes técnicos pelos nomes do mapping
             df_melt['momento'] = df_melt['momento'].replace(mapping)
-            
-            # Criar a legenda do eixo X combinando Escola e Turma
-            df_melt['eixo_x'] = df_melt['escola'] + " (" + df_melt['turma'] + ")"
-            
-            # Definir a ordem das barras (Agrupar Pré e Pós por Escola/Turma)
-            eixos_unicos = df_melt['eixo_x'].unique()
-            ordem_x = sorted(eixos_unicos)
+            # df_melt['eixo_y'] = df_melt['escola'] + " (" + df_melt['turma'] + ")"
+            df_melt['eixo_y'] = df_melt['turma']
 
-            # Chamada da classe ChartGenerator
-            await chart_tool.plot_barplot(
+            # Nova chamada direcionada para o gerador no formato horizontal/facetado
+            await chart_tool.plot_faceted_partida_chart(
                 df=df_melt,
                 path_save=path,
                 params={
-                    'x': 'eixo_x',
-                    'y': 'media',
-                    'hue': 'momento', # O que diferencia as cores das barras
-                    'order': ordem_x,
-                    'titulo': titulo,
-                    'label_x': 'Escola (Turma)',
-                    'label_y': 'Média de Acertos (%)',
-                    'ylim': 100,
-                    'palette': ['#34495e', '#2ecc71'] # Cores customizadas (Cinza e Verde)
-                },
-                formato_rotulo="{:.1f}%"
-            )        
+                    'titulo': titulo
+                }
+            )            
         except Exception as e:
             print(f"Erro no serviço de gráficos: {e}")
             raise e
