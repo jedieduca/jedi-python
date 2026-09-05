@@ -91,6 +91,6 @@ class DataProcessingService:
         
         filtros_str = " | ".join(parts)
         
-        return f"{titulo_base}\n({filtros_str})"
+        return f"{titulo_base} ({filtros_str})"
             
         

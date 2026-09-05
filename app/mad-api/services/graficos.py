@@ -47,46 +47,39 @@ class GraficosService:
             # Transformação de dados (Camada de Serviço)
             df = await service.transforma_em_dataframe(data)
 
-            titulo = await service.montar_titulo_com_filtros("Média de Acertos/Erros por Categoria e Turma", filters)
+            # Montar título considerando filtros (ex: Escola X, Categoria Y)
+            # Isso ajuda a contexto do gráfico mesmo que os dados sejam parciais
+            titulo_base = "Média de Acertos/Erros por Categoria e Turma"
+            titulo = await service.montar_titulo_com_filtros(titulo_base, filters)
 
             # Preparação dos dados: Transformação de Wide para Long (Melt)
-            # Mapeamos as colunas do banco para nomes amigáveis
-            mapping = {'media_acertos': 'Acerto', 'media_erros': 'Erro'}
-
-            # Transformar para formato longo
             df_melt = df.melt(
                 id_vars=['categoria', 'turma'],
                 value_vars=['media_acertos', 'media_erros'],
-                var_name='Tipo',
+                var_name='Tipo', # Nome técnico temporário
                 value_name='media'
             )
 
-            # Criar a coluna combinada para o eixo X (ex: "Acerto - Turma A")
-            df_melt['Tipo'] = df_melt['Tipo'].replace(mapping)
-            df_melt['Legenda_X'] = df_melt['Tipo'] + ' - ' + df_melt['turma']
+            # Mapeamento para nomes amigáveis na interface
+            mapping_tipo = {'media_acertos': 'Acerto', 'media_erros': 'Erro'}
+            df_melt['Tipo'] = df_melt['Tipo'].replace(mapping_tipo)
             
-            # Definir a ordem das barras para ficarem agrupadas por turma
-            turmas = sorted(df['turma'].unique())
-            ordem_x = []
-            for t in turmas:
-                ordem_x.extend([f"Acerto - {t}", f"Erro - {t}"])
+            # --- NOVA CHAMADA PARA O GRÁFICO FACETADO ---
+            # Em vez de chamar o chart_tool.plot_barplot antigo,
+            # chamamos a nossa nova função especializada.
             
-            # Chamar a função mestra da classe
-            await chart_tool.plot_barplot(
+            # Você precisará importar a função plot_faceted_categorical_chart aqui
+            # ou movê-la para dentro da classe ChartGenerator.
+
+            await chart_tool.plot_faceted_categorical_chart(
                 df=df_melt,
                 path_save=path,
                 params={
-                    'x': 'Legenda_X',
-                    'y': 'media',
-                    'hue': 'categoria',
-                    'order': ordem_x,
                     'titulo': titulo,
-                    'label_x': 'Turmas / Tipo',
-                    'label_y': 'Média (%)',
-                    'ylim': 100
-                },
-                formato_rotulo="{:.1f}%"
-            )            
+                    # Outros parâmetros específicos que sua função de plotagem precise
+                }
+            )
+                      
         except Exception as e:
             print(f"Erro no serviço de gráficos: {e}")
             raise e
