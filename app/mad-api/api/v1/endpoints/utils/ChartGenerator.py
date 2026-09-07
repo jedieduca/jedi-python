@@ -270,7 +270,7 @@ class ChartGenerator:
         Gera um gráfico horizontal/facetado limpo para a comparação Partida Inicial vs Partida Final.
         """
         try:
-            # 1. Configuração do Tema e Fontes
+            # 1. Configuração de Tema e Fontes
             sns.set_theme(style="whitegrid", rc={
                 "axes.facecolor": "#f8f9fa",
                 "font.size": 13,
@@ -282,78 +282,68 @@ class ChartGenerator:
                 "legend.title_fontsize": 13
             })
             
+            self._limpar_memoria()
             df_plot = df.copy()
             
-            # 2. Ordenação das Facetas e Eixo Y
+            # Ordenação de Turmas e Momentos
             momento_order = ['Partida Inicial', 'Partida Final']
             df_plot['momento'] = pd.Categorical(df_plot['momento'], categories=momento_order, ordered=True)
             
             eixos_y_unicos = sorted(df_plot['eixo_y'].unique())
             df_plot['eixo_y'] = pd.Categorical(df_plot['eixo_y'], categories=eixos_y_unicos, ordered=True)
 
-            # Paleta de cores padronizada (Cinza escuro e Verde)
             paleta_partida = ['#34495e', '#2ecc71']
 
-            # 3. Criação do Catplot Horizontal com Facetas
-            g = sns.catplot(
+            # 2. Criação do Gráfico Unificado em subplots (Sem Facetas separadas)
+            fig, ax = plt.subplots(figsize=(10, max(4.5, len(eixos_y_unicos) * 1.2)))
+
+            sns.barplot(
                 data=df_plot,
-                kind="bar",
                 x="media",
                 y="eixo_y",
                 hue="momento",
-                col="momento",
                 palette=paleta_partida,
-                height=4.5,
-                aspect=1.2,
-                sharex=True
+                ax=ax
             )
 
-            # 4. Formatação de Títulos e Limites
-            g.set_titles(col_template="{col_name}", pad=12)
-            # g.set_axis_labels("Média (%)", "Escola (Turma)")
-            g.set_axis_labels("Média (%)", "Turma")
-            g.set(xlim=(0, 115))
+            # 3. Formatação dos Eixos
+            ax.set_xlabel("Média (%)")
+            ax.set_ylabel("Turma")
+            ax.set_xlim(0, 115)
+            ax.set_yticklabels(eixos_y_unicos, color='#111111')
 
-            g.axes[0, 0].set_yticklabels(eixos_y_unicos, color='#111111')
+            # 4. Adição das Porcentagens nas Pontas das Barras
+            for container in ax.containers:
+                for bar in container:
+                    val = bar.get_width()
+                    if val > 0.1:
+                        ax.annotate(
+                            f'{val:.1f}%',
+                            (val, bar.get_y() + bar.get_height() / 2.),
+                            ha='left', va='center',
+                            fontsize=11,
+                            xytext=(4, 0),
+                            textcoords='offset points',
+                            color='#111111'
+                        )
 
-            # 5. Adição dos Valores nas Pontas das Barras
-            for ax in g.axes.flat:
-                for container in ax.containers:
-                    for bar in container:
-                        val = bar.get_width()
-                        if val > 0.1:
-                            ax.annotate(
-                                f'{val:.1f}%',
-                                (val, bar.get_y() + bar.get_height() / 2.),
-                                ha='left', va='center',
-                                fontsize=11,
-                                xytext=(4, 0),
-                                textcoords='offset points',
-                                color='#111111'
-                            )
+            # 5. Posicionamento da Legenda Externa (Mantendo o padrão aprovado)
+            plt.legend(
+                title="Momento",
+                loc="center left",
+                bbox_to_anchor=(1.01, 0.5),
+                frameon=True,
+                facecolor='white',
+                edgecolor='#cccccc'
+            )
 
-            # 6. Posicionamento da Legenda Externa
-            if g._legend:
-                g._legend.set_title("Momento")
-                sns.move_legend(
-                    g, 
-                    loc="center left", 
-                    bbox_to_anchor=(1.01, 0.5), 
-                    frameon=True,
-                    facecolor='white',
-                    edgecolor='#cccccc'
-                )
-
-            # 7. Ajuste de Espaçamento e Título Principal
+            # 6. Título Principal
             titulo_formatado = params.get('titulo', 'Desempenho Médio: Partida Inicial vs Partida Final')
-            g.fig.subplots_adjust(top=0.82, wspace=0.35) 
-            g.fig.suptitle(titulo_formatado, size=16, y=1.01)
+            ax.set_title(titulo_formatado, size=16, pad=20)
 
-            # 8. Salvamento da Imagem
-            g.savefig(path_save, dpi=100, bbox_inches='tight', pad_inches=0.15)
-            
-            plt.clf()
-            plt.close('all')
+            # 7. Salvar e Limpar Memória
+            fig.savefig(path_save, dpi=100, bbox_inches='tight', pad_inches=0.15)
+            self._limpar_memoria()
 
         except Exception as e:
             print(f"Erro ao gerar gráfico de partida facetado: {e}")
