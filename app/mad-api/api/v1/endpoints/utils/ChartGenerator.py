@@ -173,16 +173,12 @@ class ChartGenerator:
         Projetado para substituir gráficos de barras agrupados saturados.
         """
         try:
-            # 1. Ajuste global de tamanho de fontes (Fontes gigantes em pixels nativos)
+            # 1. Ajuste global do tema e fontes
             sns.set_theme(style="whitegrid", rc={
                 "axes.facecolor": "#f8f9fa",
-                "font.size": 14,
-                "axes.labelsize": 16,
-                "axes.titlesize": 18,
-                "xtick.labelsize": 14,
-                "ytick.labelsize": 14,
-                "legend.fontsize": 13,
-                "legend.title_fontsize": 14
+                "font.size": 24,
+                "axes.labelsize": 24,
+                "axes.titlesize": 24
             })
             
             df_plot = df.copy()
@@ -196,8 +192,13 @@ class ChartGenerator:
             num_categorias = df_plot['categoria'].nunique()
             paleta_cores = "tab10" if num_categorias <= 10 else "tab20"
 
-            # 2. DIMENSÕES FIXAS NATIVAS DE TELA
-            # Força o gráfico a nascer na dimensão ideal para telas (evita que o navegador tenha que encolher)
+            num_turmas = len(turmas_unicas)
+
+            # --- AJUSTE 1: ALTURA FÍSICA PROPORCIONAL DAS BARRAS ---
+            # Dá o espaçamento exato da primeira imagem para não sobrepor os rótulos das 13 categorias
+            altura_calculada = max(7.5, (num_turmas * 4.5) + 2.0)
+
+            # 2. Criação da estrutura do gráfico
             g = sns.catplot(
                 data=df_plot,
                 kind="bar",
@@ -206,21 +207,26 @@ class ChartGenerator:
                 hue="categoria",
                 col="Tipo",
                 palette=paleta_cores,
-                height=5.5,        # Altura nativa em polegadas
-                aspect=1.1,        # Proporção horizontal das facetas
+                height=altura_calculada,
+                aspect=1.0,
                 sharex=True
             )
 
+            # --- AJUSTE DE LARGURA FIXA DA FIGURA ---
+            # Força a largura total da figura em polegadas (ex: 16 polegadas de largura fixa)
+            g.fig.set_size_inches(16, altura_calculada)
+
             # 3. Formatação dos títulos e eixos
-            g.set_titles(col_template="{col_name}", pad=12)
+            g.set_titles(col_template="{col_name}", pad=15, size=22)
             g.set_axis_labels("Média (%)", "Turma")
             g.set(xlim=(0, 120))
 
-            # Rótulos do Eixo Y (Turmas)
-            g.axes[0, 0].set_yticklabels(turmas_unicas, color='#111111')
+            # --- AJUSTE 2: FONTE DO EIXO Y (TURMAS) ---
+            g.axes[0, 0].set_yticklabels(turmas_unicas, color='#111111', fontsize=22)
 
-            # 4. Valores nas pontas das barras com fonte visível
+            # --- AJUSTE 3: RÓTULOS DAS PORCENTAGENS NAS BARRAS ---
             for ax in g.axes.flat:
+                ax.tick_params(axis='x', labelsize=14)
                 for container in ax.containers:
                     for bar in container:
                         val = bar.get_width()
@@ -229,38 +235,46 @@ class ChartGenerator:
                                 f'{val:.1f}%',
                                 (val, bar.get_y() + bar.get_height() / 2.),
                                 ha='left', va='center',
-                                fontsize=11,
-                                xytext=(4, 0),
+                                fontsize=14,            # Fonte ajustada para o espaço da barra
+                                # fontweight='bold',      # Negrito para destaque imediato
+                                xytext=(5, 0),
                                 textcoords='offset points',
                                 color='#111111'
                             )
 
-            # 5. Legenda com fonte destacada e fixada à direita
+            # --- AJUSTE 4: LEGENDA LATERAL ---
             if g._legend:
-                g._legend.set_title("Categoria")
+
                 sns.move_legend(
                     g, 
                     loc="center left", 
-                    bbox_to_anchor=(1.01, 0.5), 
+                    bbox_to_anchor=(1.01, 0.5),
+                    title="Categorias",
+                    title_fontsize=22,      # Tamanho do título da legenda
+                    fontsize=22,            # Tamanho da fonte dos ITENS da legenda (igual ao eixo Y) 
+                    handletextpad=0.2,      # Reduz o espaço entre o bloco de cor e o texto (padrão é ~0.8)
+                    borderaxespad=0.2,      # Ajusta o espaçamento interno das bordas
                     frameon=True,
                     facecolor='white',
                     edgecolor='#cccccc'
                 )
 
-            # 6. Título Principal com espaçamento adequado dos subtítulos
-            titulo_formatado = params.get('titulo', 'Média de Acertos/Erros por Categoria e Turma')
-            
-            # top=0.82 move o topo dos subgráficos para baixo
-            g.fig.subplots_adjust(top=0.82, wspace=0.35) 
-            
-            # y=1.01 posiciona o título principal bem acima dos subtítulos "Acerto" e "Erro"
-            g.fig.suptitle(titulo_formatado, size=16, y=1.01)
+                # 2. (Opcional) Aumenta os marcadores/quadradinhos coloridos da legenda para acompanhar o texto grande
+                for handle in g._legend.legend_handles:
+                    handle.set_height(15)
+                    handle.set_width(15)
 
-            # 7. Salva a imagem mantendo a margem
-            g.savefig(path_save, dpi=100, bbox_inches='tight', pad_inches=0.15)            
+            # --- AJUSTE 5: TÍTULO PRINCIPAL ---
+            titulo_formatado = params.get('titulo', 'Média de Acertos/Erros por Categoria e Turma')
+            g.fig.subplots_adjust(top=0.88, wspace=0.30) 
+            g.fig.suptitle(titulo_formatado, size=24, y=1.01)
+
+            # --- AJUSTE 6: SALVAMENTO COM DPI BALANCEADO (90 DPI) ---
+            # Evita o encolhimento excessivo no navegador mantendo as fontes legíveis no container
+            # g.savefig(path_save, dpi=90, bbox_inches='tight', pad_inches=0.15)
+            g.savefig(path_save, dpi=100, pad_inches=0.15)
             plt.clf()
             plt.close('all')
-
         except Exception as e:
             print(f"Erro ao gerar gráfico facetado: {e}")
             raise e
