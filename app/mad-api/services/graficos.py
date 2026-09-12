@@ -121,7 +121,7 @@ class GraficosService:
     @staticmethod
     async def criar_grafico_perfil(data, path: str, filters: Any = None):
         try:
-            # Transformação de dados (Camada de Serviço)
+# Transformação de dados (Camada de Serviço)
             df = await service.transforma_em_dataframe(data)
 
             titulo = await service.montar_titulo_com_filtros("Comparativo: Notícias Fake vs. Não Fake por Categoria", filters)
@@ -139,22 +139,22 @@ class GraficosService:
                 'nao_fake_qt': 'Não Fake'
             })
             
-            # Chamada à ferramenta de plotagem (Apresentação)
+            # Chamada à ferramenta de plotagem com EIXOS INVERTIDOS
             await chart_tool.plot_barplot(
                 df=df_melt,
                 path_save=path,
                 params={
-                    'x': 'categoria',
-                    'y': 'quantidade',
+                    'x': 'quantidade',          # Invertido: quantidade agora vai para o eixo X
+                    'y': 'categoria',           # Invertido: categoria agora vai para o eixo Y
                     'hue': 'tipo_noticia',
                     'titulo': titulo,
-                    'label_x': 'Categorias',
-                    'label_y': 'Quantidade de Respostas',
+                    'label_x': 'Quantidade de Respostas',  # Rótulo atualizado do eixo X
+                    'label_y': 'Categorias',               # Rótulo atualizado do eixo Y
                     'palette': ['#e74c3c', '#2ecc71'],
-                    'ylim': df_melt['quantidade'].max()
+                    'xlim': df_melt['quantidade'].max()    # Usa limite horizontal em vez de ylim
                 },
                 formato_rotulo="{:.0f}"
-            )           
+            )
         except Exception as e:
             print(f"Erro no serviço de gráficos: {e}")
             raise e

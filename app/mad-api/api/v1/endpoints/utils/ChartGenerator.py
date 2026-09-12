@@ -134,14 +134,44 @@ class ChartGenerator:
         # Limpa para a próxima requisição
         self._limpar_memoria()
 
+    @staticmethod
+    def _adicionar_rotulos(ax, formato: str, orientacao: str = 'v'):
+        """Adiciona rótulos numéricos adaptando-se a barras verticais ou horizontais."""
+        for p in ax.patches:
+            if orientacao == 'v':
+                val = p.get_height()
+                if val > 0:
+                    ax.annotate(
+                        formato.format(val),
+                        (p.get_x() + p.get_width() / 2., val),
+                        ha='center', va='bottom', fontsize=10, xytext=(0, 3), textcoords='offset points'
+                    )
+            else:
+                val = p.get_width()
+                if val > 0:
+                    ax.annotate(
+                        formato.format(val),
+                        (val, p.get_y() + p.get_height() / 2.),
+                        ha='left', va='center', fontsize=10, xytext=(4, 0), textcoords='offset points'
+                    )
+
     async def plot_barplot(self, df: pd.DataFrame, params: dict, path_save: str, formato_rotulo: str = "{:.1f}%"):
         """
-        Função Mestra de Barras. 
-        Substitui a lógica repetitiva de todas as funções de barra do utils.py.
+        Função Mestra de Barras com suporte robusto a orientação Vertical e Horizontal.
         """
         self._limpar_memoria()
         
-        fig, ax = plt.subplots(figsize=(10, 6))
+        # 1. Identifica a orientação baseando-se na coluna passada no eixo Y
+        col_x = str(params.get('x'))
+        col_y = str(params.get('y'))
+
+        is_horizontal = params.get('orientacao') == 'h' or col_y == 'categoria' or params.get('x') == 'quantidade'
+
+        # Ajusta a proporção da imagem (dá mais altura física se for horizontal para não encavalar)
+        num_itens = df[col_y].nunique() if is_horizontal and col_y in df.columns else 8
+        altura_figura = max(6, num_itens * 0.6) if is_horizontal else 8
+
+        fig, ax = plt.subplots(figsize=(12, altura_figura))
         
         sns.barplot(
             data=df, 
@@ -152,18 +182,35 @@ class ChartGenerator:
             palette=params.get('palette', self.cores_padrao),
             ax=ax,
             errorbar=None
-        )    
-        
-        self._adicionar_rotulos(ax, formato_rotulo)
-        
-        ax.set_title(params.get('titulo', ''), fontsize=14)
+        )
+
+        # Formatação condicional e exclusiva
+        if is_horizontal:
+            self._adicionar_rotulos(ax, formato_rotulo, orientacao='h')
+            
+            # Ajusta limite X (largura) com folga para os valores das barras não cortarem
+            max_val = params.get('xlim', df[params.get('x')].max() if params.get('x') in df else 100)
+            ax.set_xlim(0, max_val * 1.15)
+            
+            # Formatação dos textos do eixo Y (Categorias)
+            ax.tick_params(axis='x', rotation=0, labelsize=11)
+            ax.tick_params(axis='y', labelsize=11)
+        else:
+            self._adicionar_rotulos(ax, formato_rotulo, orientacao='v')
+            
+            # Ajusta limite Y (altura)
+            max_val = params.get('ylim', 100)
+            ax.set_ylim(0, max_val * 1.15)
+            ax.tick_params(axis='x', rotation=45)
+            
+        # 4. Títulos e rótulos
+        ax.set_title(params.get('titulo', ''), fontsize=14, pad=15)
         ax.set_xlabel(params.get('label_x', ''))
         ax.set_ylabel(params.get('label_y', ''))
-        plt.ylim(0, params.get('ylim', 100) + 15)
-        plt.xticks(rotation=45)
        
+        # 5. Salvamento
         fig.tight_layout()
-        fig.savefig(path_save)
+        fig.savefig(path_save, dpi=100)
         
         self._limpar_memoria()
 
