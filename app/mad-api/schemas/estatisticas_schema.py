@@ -62,6 +62,14 @@ class DistribuicaoNotociaCategoriaFilterSchema(BaseModel):
     id: Optional[int] = None
     categoria: Optional[str] = None
 
+class RankingMatchesFilterSchema(BaseModel):
+
+    id: Optional[int] = None
+    escola: Optional[str] = None
+    turma: Optional[str] = None
+    dt_jogo_ini: Optional[str] = None
+    dt_jogo_fim: Optional[str] = None
+
 class RespostaEstatisticaSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
@@ -71,5 +79,6 @@ class RespostaEstatisticaSchema(BaseModel):
         EstisticaAvaliacaoSchema, 
         EstatisticaCategoriaTurmaSchema, 
         EstatisticaPartidaTurmaSchema, 
-        DistribuicaoNotociaCategoriaSchema
+        DistribuicaoNotociaCategoriaSchema,
+        RankingMatchesFilterSchema,
     ]]

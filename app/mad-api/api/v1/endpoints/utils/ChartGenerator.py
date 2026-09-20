@@ -409,6 +409,47 @@ class ChartGenerator:
         except Exception as e:
             print(f"Erro ao gerar gráfico de partida facetado: {e}")
             raise e
+
+    # api/v1/endpoints/utils/ChartGenerator.py
+
+    async def plot_ranking_horizontal_bars(self, df: pd.DataFrame, path_save: str, params: dict):
+        """Gera um gráfico de barras horizontais ordenado de forma decrescente."""
+        try:
+            self._limpar_memoria()
+            
+            # Garante a ordenação decrescente no DataFrame
+            df_sorted = df.sort_values(by=params.get('x'), ascending=False)
+            
+            num_itens = len(df_sorted)
+            altura_figura = max(6, num_itens * 0.5)
+
+            fig, ax = plt.subplots(figsize=(12, altura_figura))
+
+            sns.barplot(
+                data=df_sorted,
+                x=params.get('x'),
+                y=params.get('y'),
+                palette=params.get('palette', 'Blues_r'),
+                ax=ax,
+                errorbar=None
+            )
+
+            # Adiciona os rótulos de valores no final de cada barra
+            self._adicionar_rotulos(ax, formato="{:.0f}", orientacao='h')
+
+            max_val = df_sorted[params.get('x')].max() if not df_sorted.empty else 10
+            ax.set_xlim(0, max_val * 1.15)
+
+            ax.set_title(params.get('titulo', ''), fontsize=14, pad=15)
+            ax.set_xlabel(params.get('label_x', 'Número de Partidas'))
+            ax.set_ylabel(params.get('label_y', 'Aluno / Turma / Escola'))
+
+            fig.tight_layout()
+            fig.savefig(path_save, dpi=100, bbox_inches='tight')
+            self._limpar_memoria()
+        except Exception as e:
+            print(f"Erro ao gerar gráfico de ranking: {e}")
+            raise e
         
 # --- Instância global para uso nos serviços ---
 chart_tool = ChartGenerator()

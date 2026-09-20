@@ -4,6 +4,7 @@ from models.vwestatistica_avaliacao_model import VwEstatisticaAvaliacoesModel
 from models.vwestatistica_categoria_turma_model import VwEstatisticaCategoriaTurmaModel
 from models.vwestatististica_partida_turma import VwEstatisticaPartidaTurmaModel
 from models.vwdistribuicao_noticias_categoria import VwDistribuicaoNoticiasCategoriaModel
+from models.vwnumero_partidas import VwNumeroPartidasModel
 
 class EstatisticaRepository:
     def __init__(self, db: AsyncSession):
@@ -62,6 +63,24 @@ class EstatisticaRepository:
             query = query.where(VwDistribuicaoNoticiasCategoriaModel.id == filters.id)
         if filters.categoria:
             query = query.where(VwDistribuicaoNoticiasCategoriaModel.categoria == filters.categoria)
+        
+        result = await self.db.execute(query)
+        
+        return result.scalars().all()
+
+    async def get_ranking_partidas_aluno(self, filters=None):
+        query = select(VwNumeroPartidasModel)
+        
+        if filters.id:
+            query = query.where(VwNumeroPartidasModel.id == filters.id)
+        if filters.escola:
+            query = query.where(VwNumeroPartidasModel.escola == filters.escola)
+        if filters.turma:
+            query = query.where(VwNumeroPartidasModel.turma == filters.turma)
+        if filters.dt_jogo_ini:
+            query = query.where(VwNumeroPartidasModel.dt_jogo >= filters.dt_jogo_ini)
+        if filters.dt_jogo_fim:
+            query = query.where(VwNumeroPartidasModel.dt_jogo <= filters.dt_jogo_fim)
         
         result = await self.db.execute(query)
         

@@ -121,7 +121,7 @@ class GraficosService:
     @staticmethod
     async def criar_grafico_perfil(data, path: str, filters: Any = None):
         try:
-# Transformação de dados (Camada de Serviço)
+            # Transformação de dados (Camada de Serviço)
             df = await service.transforma_em_dataframe(data)
 
             titulo = await service.montar_titulo_com_filtros("Comparativo: Notícias Fake vs. Não Fake por Categoria", filters)
@@ -148,7 +148,7 @@ class GraficosService:
                     'y': 'categoria',           # Invertido: categoria agora vai para o eixo Y
                     'hue': 'tipo_noticia',
                     'titulo': titulo,
-                    'label_x': 'Quantidade de Respostas',  # Rótulo atualizado do eixo X
+                    'label_x': 'Quantidade de Notícias',  # Rótulo atualizado do eixo X
                     'label_y': 'Categorias',               # Rótulo atualizado do eixo Y
                     'palette': ['#e74c3c', '#2ecc71'],
                     'xlim': df_melt['quantidade'].max()    # Usa limite horizontal em vez de ylim
@@ -218,4 +218,35 @@ class GraficosService:
             )        
         except Exception as e:
             print(f"Erro no serviço de gráficos: {e}")
+            raise e
+
+    @staticmethod
+    async def criar_grafico_ranking_partidas(data, path: str, filters: Any = None):
+        try:
+            df = await service.transforma_em_dataframe(data)
+
+            # Garante ordenação e tipo numérico
+            df = await service.preparar_dados_ranking(df, coluna_quantidade='numero_partidas')
+
+            df = df.sort_values(by='numero_partidas', ascending=False)
+
+            # Cria rótulo do eixo Y composto: Escola - Turma - Aluno
+            df['rotulo_aluno'] = df['escola'] + " | " + df['turma'] + " | " + df['aluno']
+
+            titulo = await service.montar_titulo_com_filtros("Ranking de Partidas Jogadas por Aluno", filters)
+
+            await chart_tool.plot_ranking_horizontal_bars(
+                df=df,
+                path_save=path,
+                params={
+                    'x': 'numero_partidas',
+                    'y': 'rotulo_aluno',
+                    'titulo': titulo,
+                    'label_x': 'Quantidade de Partidas',
+                    'label_y': 'Escola | Turma | Aluno',
+                    'palette': 'viridis'
+                }
+            )
+        except Exception as e:
+            print(f"Erro no serviço de gráficos de ranking: {e}")
             raise e

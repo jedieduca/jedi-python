@@ -92,5 +92,25 @@ class DataProcessingService:
         filtros_str = " | ".join(parts)
         
         return f"{titulo_base} ({filtros_str})"
+
+    async def preparar_dados_ranking(self, df: pd.DataFrame, coluna_quantidade: str = 'numero_partidas') -> pd.DataFrame:
+        """
+        Converte a coluna informada para o tipo numérico e ordena o DataFrame 
+        de forma decrescente com base nessa coluna.
+        """
+        try:
+            if df.empty or coluna_quantidade not in df.columns:
+                return df
+
+            # Converte valores da coluna para numérico de forma segura
+            df[coluna_quantidade] = pd.to_numeric(df[coluna_quantidade], errors='coerce').fillna(0)
+            
+            # Ordena decrescente pelo número de partidas/quantidade
+            df = df.sort_values(by=coluna_quantidade, ascending=False)
+            
+            return df
+        except Exception as e:
+            print(f"Erro ao preparar dados de ranking: {e}")
+            raise e
             
         

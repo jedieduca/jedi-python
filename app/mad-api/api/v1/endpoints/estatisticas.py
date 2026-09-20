@@ -7,6 +7,7 @@ from schemas.estatisticas_schema import (
     EstisticaAvaliacaoFilterSchema,
     EstisticaCategoriaFilterSchema,
     EstatisticaPartidaFilterSchema,
+    RankingMatchesFilterSchema,
     RespostaEstatisticaSchema,
     DistribuicaoNotociaCategoriaFilterSchema
 )
@@ -198,6 +199,38 @@ async def get_perfil_noticia(
         # print(f"/{path_relativo}?v={timestamp}")
         link = {
             "grafico_perfil_noticia": f"{base_url}/{path_relativo}?v={timestamp}"
+        }
+
+        return {
+            "total": len(data),
+            "link_imagem": link,
+            "dados": data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@router.get('/ranking_partidas', status_code=status.HTTP_200_OK, response_model=RespostaEstatisticaSchema)
+async def get_ranking_partidas(
+    request: Request,
+    filters: RankingMatchesFilterSchema = Depends(),
+    usuario_logado: UsuarioModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session_JEDi)
+):
+    try:
+        repo = EstatisticaRepository(db)
+        data = await repo.get_ranking_partidas_aluno(filters)
+        
+        if not data:
+            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+
+        path_relativo = "static/estatisticas/img/ranking_partidas.jpg"
+        
+        await GraficosService.criar_grafico_ranking_partidas(data, path_relativo)
+
+        base_url = settings.URL_BASE
+        timestamp = int(time.time())
+        link = {
+            "grafico_ranking_partidas": f"{base_url}/{path_relativo}?v={timestamp}"
         }
 
         return {
