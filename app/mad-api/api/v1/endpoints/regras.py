@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.usuario_model import UsuarioModel
 from repositories.regras_repository import RegrasRepository
 from services.regras import RegrasService
-from schemas.vwapriori_schema import RespostaApriorSchema
+from schemas.vwapriori_schema import RespostaApriorSchema, RegrasAssociacaorFilterSchema
 from core.deps import get_session_JEDi, get_current_user
 from core.configs import settings
 
@@ -13,14 +13,19 @@ router = APIRouter(redirect_slashes=False)
 
 # GET Regras
 @router.get('', status_code=status.HTTP_200_OK, response_model=RespostaApriorSchema)
-async def get_rules(request: Request, usuario_logado: UsuarioModel = Depends(get_current_user), db: AsyncSession = Depends(get_session_JEDi)):
+async def get_rules(
+    request: Request,
+    filters: RegrasAssociacaorFilterSchema = Depends(),
+    usuario_logado: UsuarioModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session_JEDi)
+):
     try:
         # Instancia o repositório passando a sessão do banco e a camada de serviços
         repo     = RegrasRepository(db)
         service  = RegrasService()
         
         # Chama a camada de dados de forma isolada
-        data = await repo.get_dados_mineracao()
+        data = await repo.get_dados_mineracao(filters)
         
         regras, links_imagens = await service.processar_regras_associacao(data)
 

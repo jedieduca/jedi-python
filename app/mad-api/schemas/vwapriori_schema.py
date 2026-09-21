@@ -30,6 +30,13 @@ class RegrasAssociacaoSchema(BaseModel):
     confidence: float
     lift: float
 
+class RegrasAssociacaorFilterSchema(BaseModel):
+
+    escola: Optional[str] = None
+    turma: Optional[str] = None
+    nome: Optional[str] = None
+    capacidade_critica: Optional[str] = None
+
 # Representa o objeto de retorno final da rota
 class RespostaApriorSchema(BaseModel):
     total_regras: int
