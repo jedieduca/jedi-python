@@ -9,7 +9,8 @@ from schemas.estatisticas_schema import (
     EstatisticaPartidaFilterSchema,
     RankingMatchesFilterSchema,
     RespostaEstatisticaSchema,
-    DistribuicaoNotociaCategoriaFilterSchema
+    DistribuicaoNotociaCategoriaFilterSchema,
+    PerfilEscolaFilterSchema,
 )
 from services.graficos import GraficosService
 from repositories.estatistica_repository import EstatisticaRepository
@@ -241,3 +242,34 @@ async def get_ranking_partidas(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+@router.get('/perfil_escolas', status_code=status.HTTP_200_OK, response_model=RespostaEstatisticaSchema)
+async def get_perfil_escolas(
+    request: Request,
+    filters: PerfilEscolaFilterSchema = Depends(),
+    usuario_logado: UsuarioModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session_JEDi)
+):
+    try:
+        repo = EstatisticaRepository(db)
+        data = await repo.get_perfil_escolas_filtradas(filters)
+        
+        if not data:
+            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+
+        path_relativo = "static/estatisticas/img/perfil_escolas.jpg"
+        
+        await GraficosService.criar_grafico_perfil_escolas(data, path_relativo, filters)
+
+        base_url = settings.URL_BASE
+        timestamp = int(time.time())
+        link = {
+            "grafico_perfil_escolas": f"{base_url}/{path_relativo}?v={timestamp}"
+        }
+
+        return {
+            "total": len(data),
+            "link_imagem": link,
+            "dados": data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

@@ -450,6 +450,64 @@ class ChartGenerator:
         except Exception as e:
             print(f"Erro ao gerar gráfico de ranking: {e}")
             raise e
+
+    async def plot_perfil_escolas_chart(self, df: pd.DataFrame, path_save: str, params: dict):
+        """Gera gráfico horizontal agrupado para perfil comparativo de métricas por escola."""
+        try:
+            self._limpar_memoria()
+            
+            # Define tema e dimensões proporcionais
+            sns.set_theme(style="whitegrid")
+            num_escolas = df['escola'].nunique()
+            altura = max(6, num_escolas * 1.5)
+            
+            fig, ax = plt.subplots(figsize=(12, altura))
+            
+            # Plotagem Agrupada
+            sns.barplot(
+                data=df,
+                x='quantidade',
+                y='escola',
+                hue='metrica',
+                palette='Set2',
+                ax=ax
+            )
+            
+            # Rótulos nas pontas das barras
+            for container in ax.containers:
+                for bar in container:
+                    val = bar.get_width()
+                    if val > 0:
+                        ax.annotate(
+                            f'{int(val)}',
+                            (val, bar.get_y() + bar.get_height() / 2.),
+                            ha='left', va='center',
+                            fontsize=10,
+                            xytext=(4, 0),
+                            textcoords='offset points'
+                        )
+
+            ax.set_title(params.get('titulo', 'Perfil Quantitativo por Escola'), fontsize=15, pad=20)
+            ax.set_xlabel("Quantidade")
+            ax.set_ylabel("Escola")
+            
+            # Posicionamento da Legenda Externa
+            plt.legend(
+                title="Métricas",
+                loc="center left",
+                bbox_to_anchor=(1.01, 0.5),
+                frameon=True,
+                facecolor='white',
+                edgecolor='#cccccc'
+            )
+
+            fig.tight_layout()
+            fig.savefig(path_save, dpi=100, bbox_inches='tight', pad_inches=0.15)
+            self._limpar_memoria()
+            
+        except Exception as e:
+            print(f"Erro ao gerar gráfico de perfil de escolas: {e}")
+            raise e        
         
 # --- Instância global para uso nos serviços ---
 chart_tool = ChartGenerator()

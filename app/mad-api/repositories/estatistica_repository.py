@@ -1,3 +1,5 @@
+# from warnings import filters
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.vwestatistica_avaliacao_model import VwEstatisticaAvaliacoesModel
@@ -5,6 +7,7 @@ from models.vwestatistica_categoria_turma_model import VwEstatisticaCategoriaTur
 from models.vwestatististica_partida_turma import VwEstatisticaPartidaTurmaModel
 from models.vwdistribuicao_noticias_categoria import VwDistribuicaoNoticiasCategoriaModel
 from models.vwnumero_partidas import VwNumeroPartidasModel
+from models.vwperfil_escolas import VwPerfilEscolasModel
 
 class EstatisticaRepository:
     def __init__(self, db: AsyncSession):
@@ -12,15 +15,16 @@ class EstatisticaRepository:
 
     async def get_avaliacoes_filtradas(self, filters):
         query = select(VwEstatisticaAvaliacoesModel)
-        
-        if filters.id:
-            query = query.where(VwEstatisticaAvaliacoesModel.id == filters.id)
-        if filters.escola:
-            query = query.where(VwEstatisticaAvaliacoesModel.escola == filters.escola)
-        if filters.turma:
-            query = query.where(VwEstatisticaAvaliacoesModel.turma == filters.turma)
-        if filters.avaliacao:
-            query = query.where(VwEstatisticaAvaliacoesModel.avaliacao == filters.avaliacao)
+
+        if filters:        
+            if filters.id:
+                query = query.where(VwEstatisticaAvaliacoesModel.id == filters.id)
+            if filters.escola:
+                query = query.where(VwEstatisticaAvaliacoesModel.escola == filters.escola)
+            if filters.turma:
+                query = query.where(VwEstatisticaAvaliacoesModel.turma == filters.turma)
+            if filters.avaliacao:
+                query = query.where(VwEstatisticaAvaliacoesModel.avaliacao == filters.avaliacao)
             
         result = await self.db.execute(query)
         
@@ -28,15 +32,16 @@ class EstatisticaRepository:
     
     async def get_categorias_filtradas(self, filters):
         query = select(VwEstatisticaCategoriaTurmaModel)
-        
-        if filters.id:
-            query = query.where(VwEstatisticaCategoriaTurmaModel.id == filters.id)
-        if filters.escola:
-            query = query.where(VwEstatisticaCategoriaTurmaModel.escola == filters.escola)
-        if filters.turma:
-            query = query.where(VwEstatisticaCategoriaTurmaModel.turma == filters.turma)
-        if filters.categoria:
-            query = query.where(VwEstatisticaCategoriaTurmaModel.categoria == filters.categoria)
+
+        if filters:        
+            if filters.id:
+                query = query.where(VwEstatisticaCategoriaTurmaModel.id == filters.id)
+            if filters.escola:
+                query = query.where(VwEstatisticaCategoriaTurmaModel.escola == filters.escola)
+            if filters.turma:
+                query = query.where(VwEstatisticaCategoriaTurmaModel.turma == filters.turma)
+            if filters.categoria:
+                query = query.where(VwEstatisticaCategoriaTurmaModel.categoria == filters.categoria)
         
         result = await self.db.execute(query)
         
@@ -44,13 +49,14 @@ class EstatisticaRepository:
 
     async def get_partidas_filtradas(self, filters):
         query = select(VwEstatisticaPartidaTurmaModel)
-        
-        if filters.id:
-            query = query.where(VwEstatisticaPartidaTurmaModel.id == filters.id)
-        if filters.escola:
-            query = query.where(VwEstatisticaPartidaTurmaModel.escola == filters.escola)
-        if filters.turma:
-            query = query.where(VwEstatisticaPartidaTurmaModel.turma == filters.turma)
+
+        if filters:        
+            if filters.id:
+                query = query.where(VwEstatisticaPartidaTurmaModel.id == filters.id)
+            if filters.escola:
+                query = query.where(VwEstatisticaPartidaTurmaModel.escola == filters.escola)
+            if filters.turma:
+                query = query.where(VwEstatisticaPartidaTurmaModel.turma == filters.turma)
             
         result = await self.db.execute(query)
         
@@ -59,10 +65,11 @@ class EstatisticaRepository:
     async def get_perfil_noticias_filtradas(self, filters):
         query = select(VwDistribuicaoNoticiasCategoriaModel)
         
-        if filters.id:
-            query = query.where(VwDistribuicaoNoticiasCategoriaModel.id == filters.id)
-        if filters.categoria:
-            query = query.where(VwDistribuicaoNoticiasCategoriaModel.categoria == filters.categoria)
+        if filters:
+            if filters.id:
+                query = query.where(VwDistribuicaoNoticiasCategoriaModel.id == filters.id)
+            if filters.categoria:
+                query = query.where(VwDistribuicaoNoticiasCategoriaModel.categoria == filters.categoria)
         
         result = await self.db.execute(query)
         
@@ -71,17 +78,30 @@ class EstatisticaRepository:
     async def get_ranking_partidas_aluno(self, filters=None):
         query = select(VwNumeroPartidasModel)
         
-        if filters.id:
-            query = query.where(VwNumeroPartidasModel.id == filters.id)
-        if filters.escola:
-            query = query.where(VwNumeroPartidasModel.escola == filters.escola)
-        if filters.turma:
-            query = query.where(VwNumeroPartidasModel.turma == filters.turma)
-        if filters.dt_jogo_ini:
-            query = query.where(VwNumeroPartidasModel.dt_jogo >= filters.dt_jogo_ini)
-        if filters.dt_jogo_fim:
-            query = query.where(VwNumeroPartidasModel.dt_jogo <= filters.dt_jogo_fim)
+        if filters:
+            if filters.id:
+                query = query.where(VwNumeroPartidasModel.id == filters.id)
+            if filters.escola:
+                query = query.where(VwNumeroPartidasModel.escola == filters.escola)
+            if filters.turma:
+                query = query.where(VwNumeroPartidasModel.turma == filters.turma)
+            if filters.dt_jogo_ini:
+                query = query.where(VwNumeroPartidasModel.dt_jogo >= filters.dt_jogo_ini)
+            if filters.dt_jogo_fim:
+                query = query.where(VwNumeroPartidasModel.dt_jogo <= filters.dt_jogo_fim)
         
         result = await self.db.execute(query)
         
+        return result.scalars().all()
+
+    async def get_perfil_escolas_filtradas(self, filters=None):
+        query = select(VwPerfilEscolasModel)
+        
+        if filters:
+            if filters.id:
+                query = query.where(VwPerfilEscolasModel.id == filters.id)
+            if filters.escola:
+                query = query.where(VwPerfilEscolasModel.escola == filters.escola)
+                
+        result = await self.db.execute(query)
         return result.scalars().all()

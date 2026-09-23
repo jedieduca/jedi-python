@@ -250,3 +250,37 @@ class GraficosService:
         except Exception as e:
             print(f"Erro no serviço de gráficos de ranking: {e}")
             raise e
+
+    @staticmethod
+    async def criar_grafico_perfil_escolas(data, path: str, filters: Any = None):
+        try:
+            df = await service.transforma_em_dataframe(data)
+
+            titulo = await service.montar_titulo_com_filtros("Distribuição Qualitativa e Quantitativa por Escola", filters)
+
+            # Transformação WIDE para LONG
+            df_melt = df.melt(
+                id_vars=['escola'],
+                value_vars=['num_turmas', 'num_discentes', 'num_docentes', 'num_gestores', 'num_secretarios'],
+                var_name='metrica',
+                value_name='quantidade'
+            )
+
+            # Mapeamento de rótulos amigáveis
+            labels_map = {
+                'num_turmas': 'Turmas',
+                'num_discentes': 'Discentes',
+                'num_docentes': 'Docentes',
+                'num_gestores': 'Gestores',
+                'num_secretarios': 'Secretaria'
+            }
+            df_melt['metrica'] = df_melt['metrica'].replace(labels_map)
+
+            await chart_tool.plot_perfil_escolas_chart(
+                df=df_melt,
+                path_save=path,
+                params={'titulo': titulo}
+            )
+        except Exception as e:
+            print(f"Erro no serviço de gráfico de perfil das escolas: {e}")
+            raise e        
