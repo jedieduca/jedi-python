@@ -8,6 +8,7 @@ from models.vwestatististica_partida_turma import VwEstatisticaPartidaTurmaModel
 from models.vwdistribuicao_noticias_categoria import VwDistribuicaoNoticiasCategoriaModel
 from models.vwnumero_partidas import VwNumeroPartidasModel
 from models.vwperfil_escolas import VwPerfilEscolasModel
+from models.vwapriori_model import VwAprioriModel
 
 class EstatisticaRepository:
     def __init__(self, db: AsyncSession):
@@ -105,3 +106,19 @@ class EstatisticaRepository:
                 
         result = await self.db.execute(query)
         return result.scalars().all()
+
+    async def get_capacidade_critica_filtrada(self, filters):
+        query = select(VwAprioriModel)
+
+        if filters:
+            if filters.id:
+                query = query.where(VwAprioriModel.id == filters.id)
+            if filters.escola:
+                query = query.where(VwAprioriModel.escola == filters.escola)
+            if filters.turma:
+                query = query.where(VwAprioriModel.turma == filters.turma)
+            if filters.capacidade_critica:
+                query = query.where(VwAprioriModel.capacidade_critica == filters.capacidade_critica)
+        
+        result = await self.db.execute(query)
+        return result.scalars().all()    

@@ -84,6 +84,18 @@ class PerfilEscolaFilterSchema(BaseModel):
     id: Optional[int] = None
     escola: Optional[str] = None
 
+class CapacidadeCriticaSchema(BaseModel):
+    id: Optional[int] = None
+    escola: Optional[str]
+    turma: Optional[str]
+    capacidade_critica: str
+
+class CapacidadeCriticaFilterSchema(BaseModel):
+    id: Optional[int] = None
+    escola: Optional[str] = None
+    turma: Optional[str] = None
+    capacidade_critica: Optional[str] = None
+
 class RespostaEstatisticaSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
@@ -96,4 +108,5 @@ class RespostaEstatisticaSchema(BaseModel):
         DistribuicaoNotociaCategoriaSchema,
         RankingMatchesFilterSchema,
         PerfilEscolaSchema,
+        CapacidadeCriticaSchema,
     ]]

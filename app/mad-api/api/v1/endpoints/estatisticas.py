@@ -11,6 +11,7 @@ from schemas.estatisticas_schema import (
     RespostaEstatisticaSchema,
     DistribuicaoNotociaCategoriaFilterSchema,
     PerfilEscolaFilterSchema,
+    CapacidadeCriticaFilterSchema,
 )
 from services.graficos import GraficosService
 from repositories.estatistica_repository import EstatisticaRepository
@@ -264,6 +265,38 @@ async def get_perfil_escolas(
         timestamp = int(time.time())
         link = {
             "grafico_perfil_escolas": f"{base_url}/{path_relativo}?v={timestamp}"
+        }
+
+        return {
+            "total": len(data),
+            "link_imagem": link,
+            "dados": data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@router.get('/capacidade_critica', status_code=status.HTTP_200_OK, response_model=RespostaEstatisticaSchema)
+async def get_capacidade_critica(
+    request: Request,
+    filters: CapacidadeCriticaFilterSchema = Depends(),
+    usuario_logado: UsuarioModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session_JEDi)
+):
+    try:
+        repo = EstatisticaRepository(db)
+        data = await repo.get_capacidade_critica_filtrada(filters)
+        
+        if not data:
+            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+
+        path_relativo = "static/estatisticas/img/capacidade_critica.jpg"
+        
+        await GraficosService.criar_grafico_capacidade_critica(data, path_relativo, filters)
+
+        base_url = settings.URL_BASE
+        timestamp = int(time.time())
+        link = {
+            "grafico_capacidade_critica": f"{base_url}/{path_relativo}?v={timestamp}"
         }
 
         return {

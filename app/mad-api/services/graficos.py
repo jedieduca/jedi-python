@@ -283,4 +283,30 @@ class GraficosService:
             )
         except Exception as e:
             print(f"Erro no serviço de gráfico de perfil das escolas: {e}")
-            raise e        
+            raise e 
+
+    @staticmethod
+    async def criar_grafico_capacidade_critica(data, path: str, filters: Any = None):
+        try:
+            df = await service.transforma_em_dataframe(data)
+
+            # 1. Agrupa e conta a quantidade absoluta por Escola, Turma e Capacidade Crítica
+            df_agrupado = df.groupby(['escola', 'turma', 'capacidade_critica']).size().reset_index(name='quantidade')
+
+            # 2. Calcula o Total de cada Turma para obter o percentual individual
+            df_agrupado['total_turma'] = df_agrupado.groupby(['escola', 'turma'])['quantidade'].transform('sum')
+            
+            # 3. Calcula o percentual da capacidade crítica dentro daquela escola/turma
+            df_agrupado['percentual'] = (df_agrupado['quantidade'] / df_agrupado['total_turma']) * 100
+
+            titulo = await service.montar_titulo_com_filtros("Distribuição de Capacidade Crítica por Escola e Turma", filters)
+
+            # Chama o gerador de gráfico enviando os dados já agrupados e calculados
+            await chart_tool.plot_capacidade_critica_chart(
+                df=df_agrupado,
+                path_save=path,
+                params={'titulo': titulo}
+            )
+        except Exception as e:
+            print(f"Erro no serviço de gráficos de capacidade crítica: {e}")
+            raise e

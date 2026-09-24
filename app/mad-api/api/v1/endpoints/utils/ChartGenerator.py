@@ -507,7 +507,69 @@ class ChartGenerator:
             
         except Exception as e:
             print(f"Erro ao gerar gráfico de perfil de escolas: {e}")
-            raise e        
+            raise e
+
+    async def plot_capacidade_critica_chart(self, df: pd.DataFrame, path_save: str, params: dict):
+        """Gera gráficos de rosca facetados por Escola e Turma com quantidade e percentual no centro do anel."""
+        try:
+            self._limpar_memoria()
+            
+            turmas_unicas = df[['escola', 'turma']].drop_duplicates()
+            num_turmas = len(turmas_unicas)
+
+            if num_turmas == 0:
+                return
+
+            fig, axes = plt.subplots(
+                nrows=1, 
+                ncols=num_turmas, 
+                figsize=(6 * num_turmas, 6), 
+                squeeze=False
+            )
+            axes = axes.flatten()
+
+            for idx, (_, row) in enumerate(turmas_unicas.iterrows()):
+                escola_atual, turma_atual = row['escola'], row['turma']
+                
+                df_sub = df[(df['escola'] == escola_atual) & (df['turma'] == turma_atual)]
+                ax = axes[idx]
+
+                # Formata os rótulos internos com Quantidade (Absoluta) e Percentual (%)
+                def func_rotulo(pct, allvals):
+                    absolute = int(round(pct / 100. * sum(allvals)))
+                    return f"{absolute}\n({pct:.1f}%)"
+
+                wedges, texts, autotexts = ax.pie(
+                    df_sub['quantidade'],
+                    labels=df_sub['capacidade_critica'],
+                    autopct=lambda pct: func_rotulo(pct, df_sub['quantidade']),
+                    startangle=140,
+                    pctdistance=0.8,  # <--- AJUSTE CHAVE: Posiciona o texto exatamente no centro do anel colorido (entre 0.6 e 1.0)
+                    labeldistance=1.1, # Afasta levemente as legendas externas ("AUMENTOU", "DIMINUIU")
+                    wedgeprops=dict(width=0.4, edgecolor='w'), # Espessura da rosca
+                    colors=sns.color_palette("Set2", len(df_sub))
+                )
+
+                # Ajusta a cor e o destaque do texto interno (para ficar legível sobre as cores da rosca)
+                plt.setp(autotexts, size=11, weight="bold", color="white")
+                
+                # Ajusta o tamanho da fonte das legendas externas ("AUMENTOU", "DIMINUIU")
+                plt.setp(texts, size=11, weight="bold", color="#333333")
+
+                ax.set_title(f"{escola_atual}\nTurma: {turma_atual}", fontsize=12, pad=15)
+
+            # Oculta subplots sobressalentes se houver
+            for j in range(idx + 1, len(axes)):
+                fig.delaxes(axes[j])
+
+            fig.suptitle(params.get('titulo', 'Distribuição de Capacidade Crítica por Escola e Turma'), fontsize=15, y=1.05)
+            fig.tight_layout()
+            fig.savefig(path_save, dpi=100, bbox_inches='tight')
+            self._limpar_memoria()
+
+        except Exception as e:
+            print(f"Erro ao gerar gráfico de capacidade crítica: {e}")
+            raise e
         
 # --- Instância global para uso nos serviços ---
 chart_tool = ChartGenerator()

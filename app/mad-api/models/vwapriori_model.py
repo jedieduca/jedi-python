@@ -24,3 +24,4 @@ class VwAprioriModel(settings.DBBaseModelJEDi):
     percentual_acertos: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2))
     percentual_erros: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2))
     capacidade_critica = Column(String(8))
+
