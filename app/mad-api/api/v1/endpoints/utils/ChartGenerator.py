@@ -510,7 +510,7 @@ class ChartGenerator:
             raise e
 
     async def plot_capacidade_critica_chart(self, df: pd.DataFrame, path_save: str, params: dict):
-        """Gera gráficos de rosca facetados por Escola e Turma com quantidade e percentual no centro do anel."""
+        """Gera gráficos de rosca dispostos em 3 colunas por linha."""
         try:
             self._limpar_memoria()
             
@@ -520,13 +520,21 @@ class ChartGenerator:
             if num_turmas == 0:
                 return
 
+            # 1. DEFINE A GRELHA: Fixa 3 colunas e calcula as linhas necessárias
+            ncols = 3
+            nrows = (num_turmas + ncols - 1) // ncols  # Arredonda para cima
+
+            # 2. AJUSTA O TAMANHO DA FIGURA: Largura para 3 colunas (16px) e altura dinâmica
+            largura_fig = 16
+            altura_fig = 5 * nrows
+            
             fig, axes = plt.subplots(
-                nrows=1, 
-                ncols=num_turmas, 
-                figsize=(6 * num_turmas, 6), 
+                nrows=nrows, 
+                ncols=ncols, 
+                figsize=(largura_fig, altura_fig), 
                 squeeze=False
             )
-            axes = axes.flatten()
+            axes = axes.flatten() # Achata a matriz de eixos para uma lista simples
 
             for idx, (_, row) in enumerate(turmas_unicas.iterrows()):
                 escola_atual, turma_atual = row['escola'], row['turma']
@@ -534,7 +542,7 @@ class ChartGenerator:
                 df_sub = df[(df['escola'] == escola_atual) & (df['turma'] == turma_atual)]
                 ax = axes[idx]
 
-                # Formata os rótulos internos com Quantidade (Absoluta) e Percentual (%)
+                # Formata os rótulos internos com Quantidade e Percentual
                 def func_rotulo(pct, allvals):
                     absolute = int(round(pct / 100. * sum(allvals)))
                     return f"{absolute}\n({pct:.1f}%)"
@@ -544,25 +552,27 @@ class ChartGenerator:
                     labels=df_sub['capacidade_critica'],
                     autopct=lambda pct: func_rotulo(pct, df_sub['quantidade']),
                     startangle=140,
-                    pctdistance=0.8,  # <--- AJUSTE CHAVE: Posiciona o texto exatamente no centro do anel colorido (entre 0.6 e 1.0)
-                    labeldistance=1.1, # Afasta levemente as legendas externas ("AUMENTOU", "DIMINUIU")
-                    wedgeprops=dict(width=0.4, edgecolor='w'), # Espessura da rosca
+                    pctdistance=0.8,    # Centraliza o texto no anel
+                    labeldistance=1.15,  # Posição da legenda externa (AUMENTOU/DIMINUIU)
+                    wedgeprops=dict(width=0.4, edgecolor='w'),
                     colors=sns.color_palette("Set2", len(df_sub))
                 )
 
-                # Ajusta a cor e o destaque do texto interno (para ficar legível sobre as cores da rosca)
+                # Estilização dos textos
                 plt.setp(autotexts, size=11, weight="bold", color="white")
-                
-                # Ajusta o tamanho da fonte das legendas externas ("AUMENTOU", "DIMINUIU")
-                plt.setp(texts, size=11, weight="bold", color="#333333")
+                plt.setp(texts, size=10, weight="bold", color="#333333")
 
-                ax.set_title(f"{escola_atual}\nTurma: {turma_atual}", fontsize=12, pad=15)
+                ax.set_title(f"{escola_atual}\nTurma: {turma_atual}", fontsize=11, pad=12)
 
-            # Oculta subplots sobressalentes se houver
-            for j in range(idx + 1, len(axes)):
+            # 3. OCULTA OS SUBPLOTS VAZIOS (caso o total não seja múltiplo de 3)
+            for j in range(num_turmas, len(axes)):
                 fig.delaxes(axes[j])
 
-            fig.suptitle(params.get('titulo', 'Distribuição de Capacidade Crítica por Escola e Turma'), fontsize=15, y=1.05)
+            fig.suptitle(
+                params.get('titulo', 'Distribuição de Capacidade Crítica por Escola e Turma'), 
+                fontsize=16, 
+                y=1.02
+            )
             fig.tight_layout()
             fig.savefig(path_save, dpi=100, bbox_inches='tight')
             self._limpar_memoria()
