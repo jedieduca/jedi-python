@@ -93,6 +93,8 @@ async def get_avaliacoes(
             "link_imagem": link,
             "dados": data
         }
+    except HTTPException:
+        raise    
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))    
     
@@ -130,6 +132,8 @@ async def get_categoria_turma(
             "link_imagem": link,
             "dados": data
         }
+    except HTTPException:
+        raise    
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))    
 
@@ -169,6 +173,8 @@ async def get_partida_escola(
             "link_imagem": link,
             "dados": data
         }
+    except HTTPException:
+        raise    
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -208,6 +214,8 @@ async def get_perfil_noticia(
             "link_imagem": link,
             "dados": data
         }
+    except HTTPException:
+        raise            
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -240,6 +248,8 @@ async def get_ranking_partidas(
             "link_imagem": link,
             "dados": data
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -272,6 +282,8 @@ async def get_perfil_escolas(
             "link_imagem": link,
             "dados": data
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -304,5 +316,7 @@ async def get_capacidade_critica(
             "link_imagem": link,
             "dados": data
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

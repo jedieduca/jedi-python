@@ -1,6 +1,7 @@
 from typing import Optional, List, Dict, Any, Union
 from pydantic import BaseModel, ConfigDict
 from decimal import Decimal
+from datetime import date
 
 class EstisticaAvaliacaoSchema(BaseModel):
         
@@ -67,8 +68,8 @@ class RankingMatchesFilterSchema(BaseModel):
     id: Optional[int] = None
     escola: Optional[str] = None
     turma: Optional[str] = None
-    dt_jogo_ini: Optional[str] = None
-    dt_jogo_fim: Optional[str] = None
+    dt_jogo_ini: Optional[date] = None
+    dt_jogo_fim: Optional[date] = None
 
 class PerfilEscolaSchema(BaseModel):
     id: Optional[int] = None
@@ -94,6 +95,8 @@ class CapacidadeCriticaFilterSchema(BaseModel):
     id: Optional[int] = None
     escola: Optional[str] = None
     turma: Optional[str] = None
+    dt_jogo_ini: Optional[date] = None
+    dt_jogo_fim: Optional[date] = None
     capacidade_critica: Optional[str] = None
 
 class RespostaEstatisticaSchema(BaseModel):

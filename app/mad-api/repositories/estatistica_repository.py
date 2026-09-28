@@ -117,6 +117,10 @@ class EstatisticaRepository:
                 query = query.where(VwAprioriModel.escola == filters.escola)
             if filters.turma:
                 query = query.where(VwAprioriModel.turma == filters.turma)
+            if filters.dt_jogo_ini:
+                query = query.where(VwAprioriModel.dt_jogo >= filters.dt_jogo_ini)
+            if filters.dt_jogo_fim:
+                query = query.where(VwAprioriModel.dt_jogo <= filters.dt_jogo_fim)
             if filters.capacidade_critica:
                 query = query.where(VwAprioriModel.capacidade_critica == filters.capacidade_critica)
         
