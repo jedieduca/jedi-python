@@ -12,6 +12,7 @@ from schemas.estatisticas_schema import (
     DistribuicaoNotociaCategoriaFilterSchema,
     PerfilEscolaFilterSchema,
     CapacidadeCriticaFilterSchema,
+    AnaliseIdadeFilterSchema,
 )
 from services.graficos import GraficosService
 from repositories.estatistica_repository import EstatisticaRepository
@@ -22,45 +23,7 @@ from core.configs import settings
 router = APIRouter()
 
 # GET Estatísticas por Avaliação
-@router.get(
-    '/avaliacao',
-    description="""
-    Retorna as estatísticas detalhadas por avaliação.
-
-    **Exemplo de chamada via cURL:**
-    ```bash
-    curl -X 'GET' \\
-    'http://localhost:8000/api/v1/estatisticas/avaliacao' \\
-        -H 'accept: application/json' \\
-        -H 'Authorization: Bearer SEU_TOKEN_AQUI'
-    """,
-    status_code=status.HTTP_200_OK,
-    response_model=RespostaEstatisticaSchema,
-    responses={
-        200: {
-            "description": "Dados retornados com sucesso.",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "total": 100,
-                        "link_imagem": {"grafico_avaliacao": "http://localhost:8000/static/..."},
-                        "dados": []
-                    }
-                }
-            },
-        },
-        500: {
-            "description": "Erro interno durante a chamada.",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Mensagem de Erro"
-                    }
-                }
-            },
-        }
-    }
-)
+@router.get('/avaliacao', status_code=status.HTTP_200_OK, response_model=RespostaEstatisticaSchema)
 async def get_avaliacoes(
     request: Request,
     filters: EstisticaAvaliacaoFilterSchema = Depends(),
@@ -309,6 +272,44 @@ async def get_capacidade_critica(
         timestamp = int(time.time())
         link = {
             "grafico_capacidade_critica": f"{base_url}/{path_relativo}?v={timestamp}"
+        }
+
+        return {
+            "total": len(data),
+            "link_imagem": link,
+            "dados": data
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@router.get('/analise_idade', status_code=status.HTTP_200_OK, response_model=RespostaEstatisticaSchema)
+async def get_analise_idade(
+    request: Request,
+    filters: AnaliseIdadeFilterSchema = Depends(),
+    usuario_logado: UsuarioModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session_JEDi)
+):
+    try:
+        repo = EstatisticaRepository(db)
+        data = await repo.get_analise_idade_filtrada(filters)
+
+        if not data:
+            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+
+        # O boxplot precisa de pelo menos um jogador com idade informada
+        if all(item.idade is None for item in data):
+            raise HTTPException(detail='Nenhum jogador com idade informada para os filtros selecionados.', status_code=status.HTTP_404_NOT_FOUND)
+
+        path_relativo = "static/estatisticas/img/analise_idade.jpg"
+
+        await GraficosService.criar_grafico_analise_idade(data, path_relativo, filters)
+
+        base_url = settings.URL_BASE
+        timestamp = int(time.time())
+        link = {
+            "grafico_analise_idade": f"{base_url}/{path_relativo}?v={timestamp}"
         }
 
         return {

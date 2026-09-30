@@ -9,6 +9,7 @@ from models.vwdistribuicao_noticias_categoria import VwDistribuicaoNoticiasCateg
 from models.vwnumero_partidas import VwNumeroPartidasModel
 from models.vwperfil_escolas import VwPerfilEscolasModel
 from models.vwapriori_model import VwAprioriModel
+from models.vwanalise_idade_model import VwAnaliseIdadeModel
 
 class EstatisticaRepository:
     def __init__(self, db: AsyncSession):
@@ -125,4 +126,19 @@ class EstatisticaRepository:
                 query = query.where(VwAprioriModel.capacidade_critica == filters.capacidade_critica)
         
         result = await self.db.execute(query)
-        return result.scalars().all()    
+        return result.scalars().all() 
+       
+    async def get_analise_idade_filtrada(self, filters=None):
+        query = select(VwAnaliseIdadeModel)
+
+        if filters:
+            if filters.id:
+                query = query.where(VwAnaliseIdadeModel.id == filters.id)
+            if filters.escola:
+                query = query.where(VwAnaliseIdadeModel.escola == filters.escola)
+            if filters.turma:
+                query = query.where(VwAnaliseIdadeModel.turma == filters.turma)
+
+        result = await self.db.execute(query)
+        return result.scalars().all()
+   

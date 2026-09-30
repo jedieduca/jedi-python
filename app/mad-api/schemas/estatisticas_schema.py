@@ -99,6 +99,18 @@ class CapacidadeCriticaFilterSchema(BaseModel):
     dt_jogo_fim: Optional[date] = None
     capacidade_critica: Optional[str] = None
 
+class AnaliseIdadeSchema(BaseModel):
+    id: Optional[int] = None
+    escola: Optional[str]
+    turma: Optional[str]
+    id_jogador: int
+    idade: Optional[int]
+
+class AnaliseIdadeFilterSchema(BaseModel):
+    id: Optional[int] = None
+    escola: Optional[str] = None
+    turma: Optional[str] = None
+
 class RespostaEstatisticaSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
@@ -109,6 +121,7 @@ class RespostaEstatisticaSchema(BaseModel):
         EstatisticaCategoriaTurmaSchema, 
         EstatisticaPartidaTurmaSchema, 
         DistribuicaoNotociaCategoriaSchema,
+        AnaliseIdadeSchema,
         RankingMatchesFilterSchema,
         PerfilEscolaSchema,
         CapacidadeCriticaSchema,

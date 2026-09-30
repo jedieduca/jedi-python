@@ -9,7 +9,7 @@ class VwAprioriModel(settings.DBBaseModelJEDi):
 
     id = Column(Integer, primary_key=True)
     escola = Column(String(150))
-    turma = Column(String(15))
+    turma = Column(String(50))
     login = Column(String(12))
     nome = Column(String(100))
     dt_jogo: Mapped[date] = mapped_column(Date)

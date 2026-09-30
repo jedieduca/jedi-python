@@ -1,6 +1,7 @@
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 import pandas as pd
 
@@ -579,6 +580,115 @@ class ChartGenerator:
 
         except Exception as e:
             print(f"Erro ao gerar gráfico de capacidade crítica: {e}")
+            raise e
+
+    async def plot_boxplot_idade_chart(self, df: pd.DataFrame, path_save: str, params: dict):
+        """Gera boxplot horizontal da distribuição de idades por grupo, com o id dos outliers rotulado."""
+        try:
+            self._limpar_memoria()
+
+            # Restaura o tema padrão (outros gráficos alteram o rc global do Seaborn)
+            sns.set_theme(style="whitegrid")
+
+            col_x = params.get('x', 'idade')
+            col_y = params.get('y', 'rotulo')
+            col_outlier = params.get('col_outlier')
+            col_id = params.get('col_id')
+            ordem = params.get('order', sorted(df[col_y].unique()))
+
+            # Separa pontos normais e outliers (se o service não informar a coluna, todos são normais)
+            if col_outlier and col_outlier in df.columns:
+                df_normais = df[~df[col_outlier]]
+                df_outliers = df[df[col_outlier]]
+            else:
+                df_normais = df
+                df_outliers = df.iloc[0:0]
+
+            # Altura proporcional ao número de caixas
+            altura = max(5, len(ordem) * 0.6)
+            fig, ax = plt.subplots(figsize=(12, altura))
+
+            # Caixas: quartis, mediana e bigodes (calculados com TODOS os pontos)
+            sns.boxplot(
+                data=df,
+                x=col_x,
+                y=col_y,
+                order=ordem,
+                color=params.get('cor', '#3498db'),
+                width=0.6,
+                showfliers=False,
+                boxprops=dict(alpha=0.35),
+                medianprops=dict(color='#1f3a5f', linewidth=2),
+                ax=ax
+            )
+
+            # Pontos normais com espalhamento vertical
+            sns.stripplot(
+                data=df_normais,
+                x=col_x,
+                y=col_y,
+                order=ordem,
+                color='#2c3e50',
+                size=4,
+                alpha=0.5,
+                jitter=0.2,
+                ax=ax
+            )
+
+            # Outliers: sem espalhamento, agrupados por (grupo, idade) e rotulados com os ids
+            if not df_outliers.empty and col_id:
+                posicoes = {rotulo: i for i, rotulo in enumerate(ordem)}
+
+                def juntar_ids(ids, limite=5):
+                    ids = sorted(int(i) for i in ids)
+                    texto = ', '.join(str(i) for i in ids[:limite])
+                    if len(ids) > limite:
+                        texto += f' +{len(ids) - limite}'
+                    return texto
+
+                agrupado = (
+                    df_outliers.groupby([col_y, col_x])[col_id]
+                    .apply(juntar_ids)
+                    .reset_index()
+                )
+
+                for idx, row in agrupado.iterrows():
+                    y = posicoes[row[col_y]]
+                    ax.scatter(
+                        row[col_x], y,
+                        s=60,
+                        color='#e74c3c',
+                        edgecolor='white',
+                        linewidth=1.5,
+                        zorder=3,
+                        label='Outlier (id do jogador)' if idx == 0 else None
+                    )
+                    ax.annotate(
+                        f"id: {row[col_id]}",
+                        (row[col_x], y),
+                        xytext=(0, 9),
+                        textcoords='offset points',
+                        ha='center',
+                        va='bottom',
+                        fontsize=9,
+                        color='#333333'
+                    )
+
+                ax.legend(loc='lower right', frameon=True, facecolor='white', edgecolor='#cccccc')
+
+            # Idade é inteira: evita marcações como 11.5
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+            ax.set_title(params.get('titulo', 'Distribuição de Idade por Escola e Turma'), fontsize=14, pad=15)
+            ax.set_xlabel(params.get('label_x', 'Idade (anos)'))
+            ax.set_ylabel(params.get('label_y', 'Escola | Turma'))
+
+            fig.tight_layout()
+            fig.savefig(path_save, dpi=100, bbox_inches='tight')
+            self._limpar_memoria()
+
+        except Exception as e:
+            print(f"Erro ao gerar gráfico de boxplot de idade: {e}")
             raise e
         
 # --- Instância global para uso nos serviços ---

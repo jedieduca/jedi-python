@@ -1,5 +1,6 @@
 from typing import List, Dict, Tuple, Any
 from wordcloud import WordCloud
+import pandas as pd
 from services.data_processing import DataProcessingService
 from api.v1.endpoints.utils.ChartGenerator import chart_tool
 
@@ -309,4 +310,65 @@ class GraficosService:
             )
         except Exception as e:
             print(f"Erro no serviço de gráficos de capacidade crítica: {e}")
+            raise e
+
+    @staticmethod
+    async def criar_grafico_analise_idade(data, path: str, filters: Any = None):
+        try:
+            df = await service.transforma_em_dataframe(data)
+
+            # 1. Garante tipo numérico e remove jogadores sem idade (não entram no gráfico)
+            df['idade'] = pd.to_numeric(df['idade'], errors='coerce')
+            df = df.dropna(subset=['idade'])
+
+            if df.empty:
+                raise ValueError("Nenhum jogador com idade informada para gerar o gráfico.")
+
+            df['escola'] = df['escola'].fillna('Escola não informada')
+            df['turma'] = df['turma'].fillna('Turma não informada')
+
+            # 2. Quantidade de alunos em cada escola/turma (exibida no rótulo)
+            df['n'] = df.groupby(['escola', 'turma'])['idade'].transform('size')
+
+            # 3. Rótulo do eixo Y: se já filtrou por escola, mostra apenas a turma
+            filtrou_escola = bool(filters and filters.escola)
+            if filtrou_escola:
+                df['rotulo'] = df['turma'] + " (n=" + df['n'].astype(str) + ")"
+                label_y = 'Turma'
+            else:
+                df['rotulo'] = df['escola'] + " | " + df['turma'] + " (n=" + df['n'].astype(str) + ")"
+                label_y = 'Escola | Turma'
+
+            # 4. Ordem das caixas: por escola e depois por turma
+            ordem = (
+                df.sort_values(['escola', 'turma'])['rotulo']
+                .drop_duplicates()
+                .tolist()
+            )
+
+            # 5. Identifica outliers por grupo (mesma regra dos bigodes do boxplot: 1,5 × IQR)
+            q1 = df.groupby('rotulo')['idade'].transform(lambda s: s.quantile(0.25))
+            q3 = df.groupby('rotulo')['idade'].transform(lambda s: s.quantile(0.75))
+            iqr = q3 - q1
+            df['outlier'] = (df['idade'] < q1 - 1.5 * iqr) | (df['idade'] > q3 + 1.5 * iqr)
+
+
+            titulo = await service.montar_titulo_com_filtros("Distribuição de Idade por Escola e Turma", filters)
+
+            await chart_tool.plot_boxplot_idade_chart(
+                df=df,
+                path_save=path,
+                params={
+                    'x': 'idade',
+                    'y': 'rotulo',
+                    'order': ordem,
+                    'titulo': titulo,
+                    'label_x': 'Idade (anos)',
+                    'label_y': label_y,
+                    'col_outlier': 'outlier',
+                    'col_id': 'id_jogador'
+                }
+            )
+        except Exception as e:
+            print(f"Erro no serviço de gráficos de análise de idade: {e}")
             raise e
