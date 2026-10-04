@@ -97,8 +97,8 @@ class GraficosService:
             )
             
             df_melt['momento'] = df_melt['momento'].replace(mapping)
-            # df_melt['eixo_y'] = df_melt['escola'] + " (" + df_melt['turma'] + ")"
-            df_melt['eixo_y'] = df_melt['turma']
+            # Rótulo do eixo Y: Escola | Turma (mesmo formato dos gráficos de idade e ranking)
+            df_melt['eixo_y'] = df_melt['escola'] + " | " + df_melt['turma']
 
             # Nova chamada direcionada para o gerador no formato horizontal/facetado
             await chart_tool.plot_faceted_partida_chart(

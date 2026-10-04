@@ -402,9 +402,11 @@ class ChartGenerator:
 
             # 3. Formatação dos Eixos
             ax.set_xlabel("Média (%)")
-            ax.set_ylabel("Turma")
+            ax.set_ylabel("Escola | Turma")
             ax.set_xlim(0, 115)
-            ax.set_yticklabels(eixos_y_unicos, color='#111111')
+            # Quebra os rótulos longos (Escola | Turma) para não espremer a área das barras
+            ax.set_yticks(range(len(eixos_y_unicos)))
+            ax.set_yticklabels([textwrap.fill(e, width=40) for e in eixos_y_unicos], color='#111111')
 
             # 4. Adição das Porcentagens nas Pontas das Barras
             for container in ax.containers:
@@ -600,6 +602,7 @@ class ChartGenerator:
             categorias += sorted(c for c in presentes if c not in cores_fixas)
             cores = {c: cores_fixas.get(c, cor_neutra) for c in categorias}
             ordem = {c: i for i, c in enumerate(categorias)}
+            handles = [Patch(facecolor=cores[c], edgecolor='white', label=str(c)) for c in categorias]
 
             # 2. Uma rosca por linha, desenhada para 750 px de largura (3 pol. para a identificação + 4,5 pol. para a rosca)
             altura_fig = 4.2 * num_turmas
@@ -619,13 +622,24 @@ class ChartGenerator:
                 rotulo = textwrap.fill(str(escola_atual), width=25) + f"\nTurma: {turma_atual}\n(n = {total})"
                 ax.annotate(
                     rotulo,
-                    xy=(-0.12, 0.5),
+                    xy=(-0.12, 0.62),
                     xycoords='axes fraction',
                     ha='right',
-                    va='center',
+                    va='bottom',
                     fontsize=12,
                     weight='bold',
                     color='#333333'
+                )
+
+                # Legenda repetida em cada linha, logo abaixo da identificação
+                ax.legend(
+                    handles=handles,
+                    title='Capacidade crítica',
+                    loc='upper right',
+                    bbox_to_anchor=(-0.12, 0.58),
+                    fontsize=11,
+                    title_fontsize=11,
+                    frameon=False
                 )
 
                 if total == 0:
@@ -673,23 +687,12 @@ class ChartGenerator:
 
             fig.tight_layout()
 
-            # 5. Legenda única e título acima da grade (posições em polegadas convertidas para a altura da figura)
-            handles = [Patch(facecolor=cores[c], edgecolor='white', label=str(c)) for c in categorias]
-            fig.legend(
-                handles=handles,
-                title='Capacidade crítica',
-                loc='lower center',
-                ncol=len(categorias),
-                fontsize=12,
-                title_fontsize=12,
-                bbox_to_anchor=(0.5, 1 + 0.15 / altura_fig),
-                frameon=False
-            )
+            # 5. Título acima da grade (a legenda agora se repete em cada linha)
             fig.suptitle(
                 # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
                 textwrap.fill(params.get('titulo', 'Distribuição de Capacidade Crítica por Escola e Turma'), width=55),
                 fontsize=16,
-                y=1 + 0.9 / altura_fig,
+                y=1 + 0.3 / altura_fig,
                 va='bottom'
             )
 
@@ -724,6 +727,7 @@ class ChartGenerator:
             categorias = sorted(df[col_categoria].unique())
             paleta = sns.color_palette(params.get('palette', 'RdYlGn'), len(categorias))
             cores = dict(zip(categorias, paleta))
+            handles = [Patch(facecolor=cores[c], edgecolor='white', label=str(c)) for c in categorias]
 
             # Figura desenhada para 1200 px de largura: 3 pol. para o rótulo da escola/turma + 4,5 pol. por pizza
             altura_fig = 4.5 * nrows
@@ -787,31 +791,30 @@ class ChartGenerator:
                 rotulo = textwrap.fill(str(linha['escola']), width=25) + f"\nTurma: {linha['turma']}"
                 axes[i, 0].annotate(
                     rotulo,
-                    xy=(-0.12, 0.5),
+                    xy=(-0.12, 0.62),
                     xycoords='axes fraction',
                     ha='right',
-                    va='center',
+                    va='bottom',
                     fontsize=12,
                     weight='bold',
                     color='#333333'
                 )
 
+                # Legenda repetida em cada linha, logo abaixo da identificação
+                axes[i, 0].legend(
+                    handles=handles,
+                    title=params.get('titulo_legenda', ''),
+                    loc='upper right',
+                    bbox_to_anchor=(-0.12, 0.58),
+                    fontsize=11,
+                    title_fontsize=11,
+                    frameon=False
+                )
+
             fig.tight_layout()
 
-            # Legenda e título acima da grade (posições em polegadas convertidas para a altura da figura)
-            handles = [Patch(facecolor=cores[c], edgecolor='white', label=str(c)) for c in categorias]
-            fig.legend(
-                handles=handles,
-                title=params.get('titulo_legenda', ''),
-                loc='lower center',
-                ncol=len(categorias),
-                fontsize=12,
-                title_fontsize=12,
-                bbox_to_anchor=(0.5, 1 + 0.15 / altura_fig),
-                frameon=False
-            )
             # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
-            fig.suptitle(textwrap.fill(params.get('titulo', ''), width=90), fontsize=16, y=1 + 1.0 / altura_fig, va='bottom')
+            fig.suptitle(textwrap.fill(params.get('titulo', ''), width=90), fontsize=16, y=1 + 0.3 / altura_fig, va='bottom')
 
             # dpi=200 para nitidez; o CSS exibe a imagem em 1200 px (metade dos pixels)
             fig.savefig(path_save, dpi=200, bbox_inches='tight')
