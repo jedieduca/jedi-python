@@ -7,17 +7,16 @@ class EstisticaAvaliacaoSchema(BaseModel):
         
     id: Optional[int] = None
     escola: Optional[str]
-    turma: str
-    avaliacao: str
-    autoavaliacao: Decimal
-    avaliacao_jogo: Decimal
+    turma: Optional[str]
+    tipo_avaliacao: str
+    nota: str
+    qtd: int
 
 class EstisticaAvaliacaoFilterSchema(BaseModel):
         
     id: Optional[int] = None
     escola: Optional[str] = None
     turma: Optional[str] = None
-    avaliacao: Optional[str] = None
 
 class EstatisticaCategoriaTurmaSchema(BaseModel):
 

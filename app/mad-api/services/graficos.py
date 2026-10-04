@@ -11,36 +11,29 @@ class GraficosService:
     @staticmethod
     async def criar_grafico_avaliacao(data, path: str, filters: Any = None):
         try:
-            # Transformação de dados (Camada de Serviço)
             df = await service.transforma_em_dataframe(data)
 
-            titulo = await service.montar_titulo_com_filtros("Autoavaliação vs Jogo", filters)
-          
-            # Preparação (Melt)
-            df_long = df.melt(
-                id_vars='avaliacao', 
-                value_vars=['autoavaliacao', 'avaliacao_jogo'], 
-                var_name='fonte',
-                value_name='pct'
-            )
-        
-            # Chamada simplificada
-            await chart_tool.plot_barplot(
-                df=df_long,
+            titulo = await service.montar_titulo_com_filtros("Autoavaliação vs Avaliação do Jogo por Escola e Turma", filters)
+
+            # Garante uma linha por (escola, turma, tipo, nota)
+            df_pizza = df.groupby(['escola', 'turma', 'tipo_avaliacao', 'nota'], as_index=False)['qtd'].sum()
+
+            await chart_tool.plot_pizzas_comparativas(
+                df=df_pizza,
                 path_save=path,
                 params={
-                    'x': 'avaliacao',
-                    'y': 'pct',
-                    'hue': 'fonte',
                     'titulo': titulo,
-                    'palette': ['royalblue', 'darkorange'],
-                    'ylim': 100
-                },
-                formato_rotulo="{:.1f}%"
+                    'col_grupo': 'tipo_avaliacao',
+                    'col_categoria': 'nota',
+                    'col_valor': 'qtd',
+                    'ordem_grupos': ['Autoavaliação', 'Avaliação do jogo'],
+                    'titulo_legenda': 'Nota'
+                }
             )
         except Exception as e:
             print(f"Erro no serviço de gráficos: {e}")
             raise e
+
 
     @staticmethod
     async def criar_grafico_categoria(data, path: str, filters: Any = None):

@@ -21,7 +21,8 @@ class NuvemPalavarasService:
 
         # Configuração da Nuvem
         nuvem = WordCloud(
-            width=800, height=400, background_color='white',
+            # 1200x600 com scale=2 gera 2400x1200 px: casa com a figura de 12 pol. salva em dpi=200
+            width=1200, height=600, scale=2, background_color='white',
             colormap='viridis', max_words=100
         ).generate(texto_final)
 

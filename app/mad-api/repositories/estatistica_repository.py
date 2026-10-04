@@ -25,8 +25,6 @@ class EstatisticaRepository:
                 query = query.where(VwEstatisticaAvaliacoesModel.escola == filters.escola)
             if filters.turma:
                 query = query.where(VwEstatisticaAvaliacoesModel.turma == filters.turma)
-            if filters.avaliacao:
-                query = query.where(VwEstatisticaAvaliacoesModel.avaliacao == filters.avaliacao)
             
         result = await self.db.execute(query)
         

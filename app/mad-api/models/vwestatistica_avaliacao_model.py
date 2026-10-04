@@ -1,7 +1,5 @@
-from sqlalchemy import Column, Integer, String, Numeric
+from sqlalchemy import Column, Integer, String
 from core.configs import settings
-from decimal import Decimal
-from sqlalchemy.orm import Mapped, mapped_column
 
 class VwEstatisticaAvaliacoesModel(settings.DBBaseModelJEDi):
     __tablename__ = 'vw_estatistica_avaliacoes'
@@ -9,7 +7,7 @@ class VwEstatisticaAvaliacoesModel(settings.DBBaseModelJEDi):
     id = Column(Integer, primary_key=True)
     escola = Column(String(150))
     turma = Column(String(50))
-    avaliacao = Column(String(14))
-    autoavaliacao: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2))
-    avaliacao_jogo: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2))
+    tipo_avaliacao = Column(String(20))
+    nota = Column(String(50))
+    qtd = Column(Integer)
 

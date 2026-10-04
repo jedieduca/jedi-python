@@ -1,9 +1,13 @@
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 import pandas as pd
+import textwrap
+import numpy as np
+
+from matplotlib.ticker import MaxNLocator
+from matplotlib.patches import Patch
 
 class ChartGenerator:
     """Classe central para gestão de gráficos da aplicação."""
@@ -38,9 +42,12 @@ class ChartGenerator:
         """Gera gráfico de barras horizontais otimizado para textos longos."""
 
         self._limpar_memoria()
-        
-        # Aumentamos a altura (figsize) para dar espaço entre as regras
-        fig, ax = plt.subplots(figsize=(14, 10))
+
+        # Restaura o tema padrão (outros gráficos alteram o rc global do Seaborn)
+        sns.set_theme(style="whitegrid")
+
+        # Figura desenhada para 1200 px de largura; altura dá espaço para as regras em várias linhas
+        fig, ax = plt.subplots(figsize=(12, 10))
         
         # Criamos o gráfico
         sns.barplot(
@@ -71,12 +78,17 @@ class ChartGenerator:
 
         # --- FIM DAS MELHORIAS ---
 
-        ax.set_title(params.get('titulo', ''), fontsize=16, pad=20)
         ax.set_xlabel(params.get('label_x', ''))
         ax.set_ylabel('')
-        
-        # bbox_inches='tight' é CRUCIAL aqui para não cortar o texto à esquerda
-        fig.savefig(path_save, bbox_inches='tight', dpi=100)
+
+        # Encaixa as regras (texto à esquerda) dentro dos 12 pol., em vez de alargar a imagem
+        fig.tight_layout()
+
+        # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
+        fig.suptitle(textwrap.fill(params.get('titulo', ''), width=90), fontsize=16, y=1.0, va='bottom')
+
+        # dpi=200 para nitidez; o CSS exibe a imagem em 1200 px (metade dos pixels)
+        fig.savefig(path_save, bbox_inches='tight', dpi=200)
         self._limpar_memoria()
     
     async def plot_scatter(self, df: pd.DataFrame, params: dict, path_save: str):
@@ -84,7 +96,12 @@ class ChartGenerator:
         Gera um gráfico de dispersão, ideal para Regras de Associação (Lift/Suporte).
         """
         self._limpar_memoria()
-        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Restaura o tema padrão (outros gráficos alteram o rc global do Seaborn)
+        sns.set_theme(style="whitegrid")
+
+        # Figura desenhada para 1200 px de largura
+        fig, ax = plt.subplots(figsize=(12, 7))
 
         # O scatter plot do Seaborn para regras
         sns.scatterplot(
@@ -97,15 +114,19 @@ class ChartGenerator:
             ax=ax
         )
 
-        ax.set_title(params.get('titulo', ''), fontsize=14)
         ax.set_xlabel(params.get('label_x', ''))
         ax.set_ylabel(params.get('label_y', ''))
-        
+
         # Ajusta a legenda para não ficar em cima dos pontos
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        
+
         fig.tight_layout()
-        fig.savefig(path_save)
+
+        # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
+        fig.suptitle(textwrap.fill(params.get('titulo', ''), width=90), fontsize=16, y=1.0, va='bottom')
+
+        # dpi=200 para nitidez; o CSS exibe a imagem em 1200 px (metade dos pixels)
+        fig.savefig(path_save, dpi=200, bbox_inches='tight')
         self._limpar_memoria()
 
     async def plot_wordcloud(self, nuvem, path_save: str, titulo: str = None):
@@ -114,8 +135,8 @@ class ChartGenerator:
         """
         self._limpar_memoria()
         
-        # Criamos a figura
-        fig = plt.figure(figsize=(10, 5))
+        # Figura desenhada para 1200 px de largura (mesma proporção 2:1 da nuvem)
+        fig = plt.figure(figsize=(12, 6))
         
         # Exibe a nuvem de palavras
         plt.imshow(nuvem, interpolation='bilinear')
@@ -124,13 +145,14 @@ class ChartGenerator:
         plt.axis("off") 
         
         if titulo:
-            plt.title(titulo, fontsize=16, pad=20)
+            # Quebra o título para não ultrapassar a largura da figura
+            plt.title(textwrap.fill(titulo, width=90), fontsize=16, pad=20)
             
         # Ajuste firme para não haver bordas brancas desnecessárias
         plt.tight_layout(pad=0)
         
-        # Salvamento
-        fig.savefig(path_save, bbox_inches='tight')
+        # dpi=200: a nuvem (2400 px) é gravada sem reamostragem; o CSS a exibe em 1200 px
+        fig.savefig(path_save, bbox_inches='tight', dpi=200)
         
         # Limpa para a próxima requisição
         self._limpar_memoria()
@@ -161,7 +183,10 @@ class ChartGenerator:
         Função Mestra de Barras com suporte robusto a orientação Vertical e Horizontal.
         """
         self._limpar_memoria()
-        
+
+        # Restaura o tema padrão (outros gráficos alteram o rc global do Seaborn)
+        sns.set_theme(style="whitegrid")
+
         # 1. Identifica a orientação baseando-se na coluna passada no eixo Y
         col_x = str(params.get('x'))
         col_y = str(params.get('y'))
@@ -172,10 +197,11 @@ class ChartGenerator:
         num_itens = df[col_y].nunique() if is_horizontal and col_y in df.columns else 8
         altura_figura = max(6, num_itens * 0.6) if is_horizontal else 8
 
+        # Figura desenhada para 1200 px de largura
         fig, ax = plt.subplots(figsize=(12, altura_figura))
-        
+
         sns.barplot(
-            data=df, 
+            data=df,
             x=params.get('x'), 
             y=params.get('y'), 
             hue=params.get('hue'), 
@@ -204,15 +230,32 @@ class ChartGenerator:
             ax.set_ylim(0, max_val * 1.15)
             ax.tick_params(axis='x', rotation=45)
             
-        # 4. Títulos e rótulos
-        ax.set_title(params.get('titulo', ''), fontsize=14, pad=15)
         ax.set_xlabel(params.get('label_x', ''))
         ax.set_ylabel(params.get('label_y', ''))
-       
-        # 5. Salvamento
+
+        # 4. Remove a legenda automática do Seaborn (será recriada acima do gráfico, se houver)
+        handles, labels = ax.get_legend_handles_labels()
+        if ax.get_legend():
+            ax.get_legend().remove()
+
         fig.tight_layout()
-        fig.savefig(path_save, dpi=100)
-        
+
+        # 5. Legenda e título acima do gráfico (não aumentam a largura da imagem)
+        if handles:
+            fig.legend(
+                handles, labels,
+                loc='lower center',
+                ncol=len(labels),
+                bbox_to_anchor=(0.5, 1 + 0.15 / altura_figura),
+                frameon=False
+            )
+
+        # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
+        fig.suptitle(textwrap.fill(params.get('titulo', ''), width=90), fontsize=16, y=1 + 0.7 / altura_figura, va='bottom')
+
+        # 6. dpi=200 para nitidez; o CSS exibe a imagem em 1200 px (metade dos pixels)
+        fig.savefig(path_save, dpi=200, bbox_inches='tight')
+
         self._limpar_memoria()
 
     async def plot_faceted_categorical_chart(self, df: pd.DataFrame, path_save: str, params: dict):
@@ -221,12 +264,14 @@ class ChartGenerator:
         Projetado para substituir gráficos de barras agrupados saturados.
         """
         try:
-            # 1. Ajuste global do tema e fontes
+            # 1. Tema com fontes no tamanho real de exibição (figura desenhada para 1200 px de largura)
             sns.set_theme(style="whitegrid", rc={
                 "axes.facecolor": "#f8f9fa",
-                "font.size": 24,
-                "axes.labelsize": 24,
-                "axes.titlesize": 24
+                "font.size": 12,
+                "axes.labelsize": 12,
+                "axes.titlesize": 14,
+                "xtick.labelsize": 11,
+                "ytick.labelsize": 12
             })
             
             df_plot = df.copy()
@@ -242,11 +287,10 @@ class ChartGenerator:
 
             num_turmas = len(turmas_unicas)
 
-            # --- AJUSTE 1: ALTURA FÍSICA PROPORCIONAL DAS BARRAS ---
-            # Dá o espaçamento exato da primeira imagem para não sobrepor os rótulos das 13 categorias
-            altura_calculada = max(7.5, (num_turmas * 4.5) + 2.0)
+            # 2. Altura proporcional ao número de barras (0,3 pol. por categoria + respiro entre turmas)
+            largura_fig = 12
+            altura_fig = max(4.0, num_turmas * (num_categorias * 0.3 + 0.8))
 
-            # 2. Criação da estrutura do gráfico
             g = sns.catplot(
                 data=df_plot,
                 kind="bar",
@@ -255,26 +299,22 @@ class ChartGenerator:
                 hue="categoria",
                 col="Tipo",
                 palette=paleta_cores,
-                height=altura_calculada,
+                height=altura_fig,
                 aspect=1.0,
                 sharex=True
             )
 
-            # --- AJUSTE DE LARGURA FIXA DA FIGURA ---
-            # Força a largura total da figura em polegadas (ex: 16 polegadas de largura fixa)
-            g.fig.set_size_inches(16, altura_calculada)
+            g.fig.set_size_inches(largura_fig, altura_fig)
 
-            # 3. Formatação dos títulos e eixos
-            g.set_titles(col_template="{col_name}", pad=15, size=22)
+            # 3. Títulos e eixos
+            g.set_titles(col_template="{col_name}", pad=10)
             g.set_axis_labels("Média (%)", "Turma")
             g.set(xlim=(0, 120))
 
-            # --- AJUSTE 2: FONTE DO EIXO Y (TURMAS) ---
-            g.axes[0, 0].set_yticklabels(turmas_unicas, color='#111111', fontsize=22)
+            g.axes[0, 0].set_yticklabels(turmas_unicas, color='#111111')
 
-            # --- AJUSTE 3: RÓTULOS DAS PORCENTAGENS NAS BARRAS ---
+            # 4. Percentuais na ponta das barras
             for ax in g.axes.flat:
-                ax.tick_params(axis='x', labelsize=14)
                 for container in ax.containers:
                     for bar in container:
                         val = bar.get_width()
@@ -283,44 +323,35 @@ class ChartGenerator:
                                 f'{val:.1f}%',
                                 (val, bar.get_y() + bar.get_height() / 2.),
                                 ha='left', va='center',
-                                fontsize=14,            # Fonte ajustada para o espaço da barra
-                                # fontweight='bold',      # Negrito para destaque imediato
-                                xytext=(5, 0),
+                                fontsize=11,
+                                xytext=(4, 0),
                                 textcoords='offset points',
                                 color='#111111'
                             )
 
-            # --- AJUSTE 4: LEGENDA LATERAL ---
-            if g._legend:
+            # 5. Ajusta os painéis à figura (rect explícito ignora o espaço da legenda lateral original)
+            g.tight_layout(rect=[0, 0, 1, 1])
 
+            # 6. Legenda abaixo do gráfico (não aumenta a largura da imagem)
+            if g._legend:
                 sns.move_legend(
-                    g, 
-                    loc="center left", 
-                    bbox_to_anchor=(1.01, 0.5),
+                    g,
+                    loc="upper center",
+                    bbox_to_anchor=(0.5, 0),
+                    ncol=min(4, num_categorias),
                     title="Categorias",
-                    title_fontsize=22,      # Tamanho do título da legenda
-                    fontsize=22,            # Tamanho da fonte dos ITENS da legenda (igual ao eixo Y) 
-                    handletextpad=0.2,      # Reduz o espaço entre o bloco de cor e o texto (padrão é ~0.8)
-                    borderaxespad=0.2,      # Ajusta o espaçamento interno das bordas
-                    frameon=True,
-                    facecolor='white',
-                    edgecolor='#cccccc'
+                    title_fontsize=12,
+                    fontsize=12,
+                    frameon=False
                 )
 
-                # 2. (Opcional) Aumenta os marcadores/quadradinhos coloridos da legenda para acompanhar o texto grande
-                for handle in g._legend.legend_handles:
-                    handle.set_height(15)
-                    handle.set_width(15)
-
-            # --- AJUSTE 5: TÍTULO PRINCIPAL ---
+            # 7. Título principal acima dos painéis
             titulo_formatado = params.get('titulo', 'Média de Acertos/Erros por Categoria e Turma')
-            g.fig.subplots_adjust(top=0.88, wspace=0.30) 
-            g.fig.suptitle(titulo_formatado, size=24, y=1.01)
+            # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
+            g.fig.suptitle(textwrap.fill(titulo_formatado, width=90), fontsize=16, y=1.0, va='bottom')
 
-            # --- AJUSTE 6: SALVAMENTO COM DPI BALANCEADO (90 DPI) ---
-            # Evita o encolhimento excessivo no navegador mantendo as fontes legíveis no container
-            # g.savefig(path_save, dpi=90, bbox_inches='tight', pad_inches=0.15)
-            g.savefig(path_save, dpi=100, pad_inches=0.15)
+            # 8. dpi=200 para nitidez; o CSS exibe a imagem em 1200 px (metade dos pixels)
+            g.savefig(path_save, dpi=200, bbox_inches='tight', pad_inches=0.15)
             plt.clf()
             plt.close('all')
         except Exception as e:
@@ -356,8 +387,9 @@ class ChartGenerator:
 
             paleta_partida = ['#34495e', '#2ecc71']
 
-            # 2. Criação do Gráfico Unificado em subplots (Sem Facetas separadas)
-            fig, ax = plt.subplots(figsize=(10, max(4.5, len(eixos_y_unicos) * 1.2)))
+            # 2. Figura desenhada para 1200 px de largura
+            altura_fig = max(4.5, len(eixos_y_unicos) * 1.2)
+            fig, ax = plt.subplots(figsize=(12, altura_fig))
 
             sns.barplot(
                 data=df_plot,
@@ -389,22 +421,29 @@ class ChartGenerator:
                             color='#111111'
                         )
 
-            # 5. Posicionamento da Legenda Externa (Mantendo o padrão aprovado)
-            plt.legend(
+            # 5. Remove a legenda automática do Seaborn (será recriada acima do gráfico)
+            handles, labels = ax.get_legend_handles_labels()
+            if ax.get_legend():
+                ax.get_legend().remove()
+
+            fig.tight_layout()
+
+            # 6. Legenda e título acima do gráfico (não aumentam a largura da imagem)
+            fig.legend(
+                handles, labels,
                 title="Momento",
-                loc="center left",
-                bbox_to_anchor=(1.01, 0.5),
-                frameon=True,
-                facecolor='white',
-                edgecolor='#cccccc'
+                loc='lower center',
+                ncol=len(labels),
+                bbox_to_anchor=(0.5, 1 + 0.15 / altura_fig),
+                frameon=False
             )
 
-            # 6. Título Principal
+            # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
             titulo_formatado = params.get('titulo', 'Desempenho Médio: Partida Inicial vs Partida Final')
-            ax.set_title(titulo_formatado, size=16, pad=20)
+            fig.suptitle(textwrap.fill(titulo_formatado, width=90), fontsize=16, y=1 + 0.9 / altura_fig, va='bottom')
 
-            # 7. Salvar e Limpar Memória
-            fig.savefig(path_save, dpi=100, bbox_inches='tight', pad_inches=0.15)
+            # 7. dpi=200 para nitidez; o CSS exibe a imagem em 1200 px (metade dos pixels)
+            fig.savefig(path_save, dpi=200, bbox_inches='tight', pad_inches=0.15)
             self._limpar_memoria()
 
         except Exception as e:
@@ -417,7 +456,10 @@ class ChartGenerator:
         """Gera um gráfico de barras horizontais ordenado de forma decrescente."""
         try:
             self._limpar_memoria()
-            
+
+            # Restaura o tema padrão (outros gráficos alteram o rc global do Seaborn)
+            sns.set_theme(style="whitegrid")
+
             # Garante a ordenação decrescente no DataFrame
             df_sorted = df.sort_values(by=params.get('x'), ascending=False)
             
@@ -441,12 +483,20 @@ class ChartGenerator:
             max_val = df_sorted[params.get('x')].max() if not df_sorted.empty else 10
             ax.set_xlim(0, max_val * 1.15)
 
-            ax.set_title(params.get('titulo', ''), fontsize=14, pad=15)
+            # Quebra os rótulos longos (Escola | Turma | Aluno) para não espremer a área das barras
+            ax.set_yticks(ax.get_yticks())
+            ax.set_yticklabels([textwrap.fill(t.get_text(), width=45) for t in ax.get_yticklabels()])
+
             ax.set_xlabel(params.get('label_x', 'Número de Partidas'))
             ax.set_ylabel(params.get('label_y', 'Aluno / Turma / Escola'))
 
             fig.tight_layout()
-            fig.savefig(path_save, dpi=100, bbox_inches='tight')
+
+            # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
+            fig.suptitle(textwrap.fill(params.get('titulo', ''), width=90), fontsize=16, y=1.0, va='bottom')
+
+            # dpi=200 para nitidez; o CSS exibe a imagem em 1200 px (metade dos pixels)
+            fig.savefig(path_save, dpi=200, bbox_inches='tight')
             self._limpar_memoria()
         except Exception as e:
             print(f"Erro ao gerar gráfico de ranking: {e}")
@@ -460,9 +510,10 @@ class ChartGenerator:
             # Define tema e dimensões proporcionais
             sns.set_theme(style="whitegrid")
             num_escolas = df['escola'].nunique()
-            altura = max(6, num_escolas * 1.5)
-            
-            fig, ax = plt.subplots(figsize=(12, altura))
+            altura_fig = max(6, num_escolas * 1.5)
+
+            # Figura desenhada para 1200 px de largura
+            fig, ax = plt.subplots(figsize=(12, altura_fig))
             
             # Plotagem Agrupada
             sns.barplot(
@@ -483,27 +534,44 @@ class ChartGenerator:
                             f'{int(val)}',
                             (val, bar.get_y() + bar.get_height() / 2.),
                             ha='left', va='center',
-                            fontsize=10,
+                            fontsize=11,
                             xytext=(4, 0),
                             textcoords='offset points'
                         )
 
-            ax.set_title(params.get('titulo', 'Perfil Quantitativo por Escola'), fontsize=15, pad=20)
+            # Folga no eixo X para o rótulo da maior barra não ser cortado
+            ax.set_xlim(0, df['quantidade'].max() * 1.15)
+
+            # Quebra os nomes longos das escolas para não espremer a área das barras
+            ax.set_yticks(ax.get_yticks())
+            ax.set_yticklabels([textwrap.fill(t.get_text(), width=30) for t in ax.get_yticklabels()])
+
             ax.set_xlabel("Quantidade")
             ax.set_ylabel("Escola")
-            
-            # Posicionamento da Legenda Externa
-            plt.legend(
-                title="Métricas",
-                loc="center left",
-                bbox_to_anchor=(1.01, 0.5),
-                frameon=True,
-                facecolor='white',
-                edgecolor='#cccccc'
-            )
+
+            # Remove a legenda automática do Seaborn (será recriada acima do gráfico)
+            handles, labels = ax.get_legend_handles_labels()
+            if ax.get_legend():
+                ax.get_legend().remove()
 
             fig.tight_layout()
-            fig.savefig(path_save, dpi=100, bbox_inches='tight', pad_inches=0.15)
+
+            # Legenda e título acima do gráfico (não aumentam a largura da imagem)
+            fig.legend(
+                handles, labels,
+                title="Métricas",
+                loc='lower center',
+                ncol=len(labels),
+                bbox_to_anchor=(0.5, 1 + 0.15 / altura_fig),
+                frameon=False
+            )
+
+            # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
+            titulo = params.get('titulo', 'Perfil Quantitativo por Escola')
+            fig.suptitle(textwrap.fill(titulo, width=90), fontsize=16, y=1 + 0.9 / altura_fig, va='bottom')
+
+            # dpi=200 para nitidez; o CSS exibe a imagem em 1200 px (metade dos pixels)
+            fig.savefig(path_save, dpi=200, bbox_inches='tight', pad_inches=0.15)
             self._limpar_memoria()
             
         except Exception as e:
@@ -511,75 +579,246 @@ class ChartGenerator:
             raise e
 
     async def plot_capacidade_critica_chart(self, df: pd.DataFrame, path_save: str, params: dict):
-        """Gera gráficos de rosca dispostos em 3 colunas por linha."""
+        """Gera uma rosca por linha (uma por escola/turma), com a identificação à esquerda e cores fixas por categoria."""
         try:
             self._limpar_memoria()
-            
-            turmas_unicas = df[['escola', 'turma']].drop_duplicates()
+
+            # Restaura o tema padrão (outros gráficos alteram o rc global do Seaborn)
+            sns.set_theme(style="white")
+
+            turmas_unicas = df[['escola', 'turma']].drop_duplicates().sort_values(['escola', 'turma'])
             num_turmas = len(turmas_unicas)
 
             if num_turmas == 0:
                 return
 
-            # 1. DEFINE A GRELHA: Fixa 3 colunas e calcula as linhas necessárias
-            ncols = 3
-            nrows = (num_turmas + ncols - 1) // ncols  # Arredonda para cima
+            # 1. Cor e ordem fixas por categoria: a mesma cor significa a mesma coisa em todas as turmas
+            cores_fixas = {'AUMENTOU': '#66bb6a', 'MANTEVE': '#ffca28', 'DIMINUIU': '#ef5350'}
+            cor_neutra = '#90a4ae'
+            presentes = set(df['capacidade_critica'])
+            categorias = [c for c in cores_fixas if c in presentes]
+            categorias += sorted(c for c in presentes if c not in cores_fixas)
+            cores = {c: cores_fixas.get(c, cor_neutra) for c in categorias}
+            ordem = {c: i for i, c in enumerate(categorias)}
 
-            # 2. AJUSTA O TAMANHO DA FIGURA: Largura para 3 colunas (16px) e altura dinâmica
-            largura_fig = 16
-            altura_fig = 5 * nrows
-            
-            fig, axes = plt.subplots(
-                nrows=nrows, 
-                ncols=ncols, 
-                figsize=(largura_fig, altura_fig), 
-                squeeze=False
-            )
-            axes = axes.flatten() # Achata a matriz de eixos para uma lista simples
+            # 2. Uma rosca por linha, desenhada para 750 px de largura (3 pol. para a identificação + 4,5 pol. para a rosca)
+            altura_fig = 4.2 * num_turmas
+
+            fig, axes = plt.subplots(nrows=num_turmas, ncols=1, figsize=(7.5, altura_fig), squeeze=False)
+            axes = axes.flatten()
 
             for idx, (_, row) in enumerate(turmas_unicas.iterrows()):
                 escola_atual, turma_atual = row['escola'], row['turma']
-                
-                df_sub = df[(df['escola'] == escola_atual) & (df['turma'] == turma_atual)]
                 ax = axes[idx]
 
-                # Formata os rótulos internos com Quantidade e Percentual
-                def func_rotulo(pct, allvals):
-                    absolute = int(round(pct / 100. * sum(allvals)))
-                    return f"{absolute}\n({pct:.1f}%)"
+                df_sub = df[(df['escola'] == escola_atual) & (df['turma'] == turma_atual)]
+                df_sub = df_sub.sort_values('capacidade_critica', key=lambda s: s.map(ordem))
+                total = int(df_sub['quantidade'].sum())
 
-                wedges, texts, autotexts = ax.pie(
-                    df_sub['quantidade'],
-                    labels=df_sub['capacidade_critica'],
-                    autopct=lambda pct: func_rotulo(pct, df_sub['quantidade']),
-                    startangle=140,
-                    pctdistance=0.8,    # Centraliza o texto no anel
-                    labeldistance=1.15,  # Posição da legenda externa (AUMENTOU/DIMINUIU)
-                    wedgeprops=dict(width=0.4, edgecolor='w'),
-                    colors=sns.color_palette("Set2", len(df_sub))
+                # Identificação da escola/turma à esquerda da rosca
+                rotulo = textwrap.fill(str(escola_atual), width=25) + f"\nTurma: {turma_atual}\n(n = {total})"
+                ax.annotate(
+                    rotulo,
+                    xy=(-0.12, 0.5),
+                    xycoords='axes fraction',
+                    ha='right',
+                    va='center',
+                    fontsize=12,
+                    weight='bold',
+                    color='#333333'
                 )
 
-                # Estilização dos textos
-                plt.setp(autotexts, size=11, weight="bold", color="white")
-                plt.setp(texts, size=10, weight="bold", color="#333333")
+                if total == 0:
+                    ax.axis('off')
+                    continue
 
-                ax.set_title(f"{escola_atual}\nTurma: {turma_atual}", fontsize=11, pad=12)
+                wedges, _ = ax.pie(
+                    df_sub['quantidade'],
+                    colors=[cores[c] for c in df_sub['capacidade_critica']],
+                    startangle=90,
+                    counterclock=False,
+                    wedgeprops=dict(width=0.4, edgecolor='white', linewidth=2)
+                )
 
-            # 3. OCULTA OS SUBPLOTS VAZIOS (caso o total não seja múltiplo de 3)
-            for j in range(num_turmas, len(axes)):
-                fig.delaxes(axes[j])
+                # 3. Valores: dentro do anel se a fatia for grande, fora (com linha guia) se for pequena
+                for wedge, valor in zip(wedges, df_sub['quantidade']):
+                    pct = valor / total * 100
+                    texto = f"{int(valor)}\n({pct:.1f}%)"
+                    angulo = np.deg2rad((wedge.theta1 + wedge.theta2) / 2)
+                    x, y = np.cos(angulo), np.sin(angulo)
 
-            fig.suptitle(
-                params.get('titulo', 'Distribuição de Capacidade Crítica por Escola e Turma'), 
-                fontsize=16, 
-                y=1.02
-            )
+                    if pct >= 10:
+                        ax.text(
+                            0.8 * x, 0.8 * y, texto,
+                            ha='center', va='center',
+                            fontsize=11, weight='bold', color='#222222'
+                        )
+                    else:
+                        ax.annotate(
+                            texto,
+                            xy=(x, y),
+                            xytext=(1.3 * x, 1.3 * y),
+                            ha='left' if x >= 0 else 'right',
+                            va='center',
+                            fontsize=11,
+                            weight='bold',
+                            color='#222222',
+                            arrowprops=dict(arrowstyle='-', color='#888888', lw=0.8)
+                        )
+
+                # Reserva espaço para os rótulos externos sem alcançar o título
+                ax.set_xlim(-1.5, 1.5)
+                ax.set_ylim(-1.5, 1.5)
+                ax.set_aspect('equal', adjustable='box')
+
             fig.tight_layout()
-            fig.savefig(path_save, dpi=100, bbox_inches='tight')
+
+            # 5. Legenda única e título acima da grade (posições em polegadas convertidas para a altura da figura)
+            handles = [Patch(facecolor=cores[c], edgecolor='white', label=str(c)) for c in categorias]
+            fig.legend(
+                handles=handles,
+                title='Capacidade crítica',
+                loc='lower center',
+                ncol=len(categorias),
+                fontsize=12,
+                title_fontsize=12,
+                bbox_to_anchor=(0.5, 1 + 0.15 / altura_fig),
+                frameon=False
+            )
+            fig.suptitle(
+                # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
+                textwrap.fill(params.get('titulo', 'Distribuição de Capacidade Crítica por Escola e Turma'), width=55),
+                fontsize=16,
+                y=1 + 0.9 / altura_fig,
+                va='bottom'
+            )
+
+            # dpi=200 para nitidez; o CSS exibe a imagem em 750 px (metade dos pixels)
+            fig.savefig(path_save, dpi=200, bbox_inches='tight')
             self._limpar_memoria()
 
         except Exception as e:
             print(f"Erro ao gerar gráfico de capacidade crítica: {e}")
+            raise e
+
+    async def plot_pizzas_comparativas(self, df: pd.DataFrame, path_save: str, params: dict):
+        """Gera uma linha por escola/turma, com um gráfico de pizza por grupo (colunas) lado a lado."""
+        try:
+            self._limpar_memoria()
+
+            # Restaura o tema padrão (outros gráficos alteram o rc global do Seaborn)
+            sns.set_theme(style="white")
+
+            col_grupo = params.get('col_grupo')
+            col_categoria = params.get('col_categoria')
+            col_valor = params.get('col_valor')
+            grupos = params.get('ordem_grupos') or sorted(df[col_grupo].unique())
+
+            linhas = df[['escola', 'turma']].drop_duplicates().sort_values(['escola', 'turma'])
+            nrows, ncols = len(linhas), len(grupos)
+
+            if nrows == 0:
+                return
+
+            # Mesma cor para a mesma nota em todas as pizzas, para permitir a comparação
+            categorias = sorted(df[col_categoria].unique())
+            paleta = sns.color_palette(params.get('palette', 'RdYlGn'), len(categorias))
+            cores = dict(zip(categorias, paleta))
+
+            # Figura desenhada para 1200 px de largura: 3 pol. para o rótulo da escola/turma + 4,5 pol. por pizza
+            altura_fig = 4.5 * nrows
+            fig, axes = plt.subplots(nrows, ncols, figsize=(4.5 * ncols + 3, altura_fig), squeeze=False)
+
+            for i, (_, linha) in enumerate(linhas.iterrows()):
+                df_linha = df[(df['escola'] == linha['escola']) & (df['turma'] == linha['turma'])]
+
+                for j, grupo in enumerate(grupos):
+                    ax = axes[i, j]
+                    df_sub = df_linha[df_linha[col_grupo] == grupo].sort_values(col_categoria)
+                    total = int(df_sub[col_valor].sum())
+
+                    if total == 0:
+                        ax.set_title(f"{grupo}\n(sem respostas)", fontsize=13)
+                        ax.axis('off')
+                        continue
+                    wedges, _ = ax.pie(
+                        df_sub[col_valor],
+                        colors=[cores[c] for c in df_sub[col_categoria]],
+                        startangle=90,
+                        counterclock=False,
+                        wedgeprops=dict(edgecolor='white', linewidth=2)
+                    )
+
+                    # Rótulo de cada fatia: dentro se for grande, fora (com linha guia) se for pequena
+                    for wedge, valor in zip(wedges, df_sub[col_valor]):
+                        pct = valor / total * 100
+                        texto = f"{int(valor)}\n({pct:.1f}%)"
+                        angulo = np.deg2rad((wedge.theta1 + wedge.theta2) / 2)
+                        x, y = np.cos(angulo), np.sin(angulo)
+
+                        if pct >= 8:
+                            ax.text(
+                                0.7 * x, 0.7 * y, texto,
+                                ha='center', va='center',
+                                fontsize=11, weight='bold', color='#222222'
+                            )
+                        else:
+                            ax.annotate(
+                                texto,
+                                xy=(x, y),
+                                xytext=(1.3 * x, 1.3 * y),
+                                ha='left' if x >= 0 else 'right',
+                                va='center',
+                                fontsize=11,
+                                weight='bold',
+                                color='#222222',
+                                arrowprops=dict(arrowstyle='-', color='#888888', lw=0.8)
+                            )
+
+                    # Reserva espaço para os rótulos externos dentro da área do gráfico,
+                    # assim eles nunca alcançam o título (que fica acima dessa área)
+                    ax.set_xlim(-1.7, 1.7)
+                    ax.set_ylim(-1.7, 1.7)
+                    ax.set_aspect('equal', adjustable='box')
+
+                    ax.set_title(f"{grupo} (n = {total})", fontsize=13, pad=10)
+
+                # Identificação da escola/turma à esquerda da linha
+                rotulo = textwrap.fill(str(linha['escola']), width=25) + f"\nTurma: {linha['turma']}"
+                axes[i, 0].annotate(
+                    rotulo,
+                    xy=(-0.12, 0.5),
+                    xycoords='axes fraction',
+                    ha='right',
+                    va='center',
+                    fontsize=12,
+                    weight='bold',
+                    color='#333333'
+                )
+
+            fig.tight_layout()
+
+            # Legenda e título acima da grade (posições em polegadas convertidas para a altura da figura)
+            handles = [Patch(facecolor=cores[c], edgecolor='white', label=str(c)) for c in categorias]
+            fig.legend(
+                handles=handles,
+                title=params.get('titulo_legenda', ''),
+                loc='lower center',
+                ncol=len(categorias),
+                fontsize=12,
+                title_fontsize=12,
+                bbox_to_anchor=(0.5, 1 + 0.15 / altura_fig),
+                frameon=False
+            )
+            # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
+            fig.suptitle(textwrap.fill(params.get('titulo', ''), width=90), fontsize=16, y=1 + 1.0 / altura_fig, va='bottom')
+
+            # dpi=200 para nitidez; o CSS exibe a imagem em 1200 px (metade dos pixels)
+            fig.savefig(path_save, dpi=200, bbox_inches='tight')
+            self._limpar_memoria()
+
+        except Exception as e:
+            print(f"Erro ao gerar gráfico de pizzas comparativas: {e}")
             raise e
 
     async def plot_boxplot_idade_chart(self, df: pd.DataFrame, path_save: str, params: dict):
@@ -670,7 +909,7 @@ class ChartGenerator:
                         textcoords='offset points',
                         ha='center',
                         va='bottom',
-                        fontsize=9,
+                        fontsize=10,
                         color='#333333'
                     )
 
@@ -679,12 +918,21 @@ class ChartGenerator:
             # Idade é inteira: evita marcações como 11.5
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
-            ax.set_title(params.get('titulo', 'Distribuição de Idade por Escola e Turma'), fontsize=14, pad=15)
+            # Quebra os rótulos longos (Escola | Turma (n=...)) para não espremer a área das caixas
+            ax.set_yticks(ax.get_yticks())
+            ax.set_yticklabels([textwrap.fill(t.get_text(), width=40) for t in ax.get_yticklabels()])
+
             ax.set_xlabel(params.get('label_x', 'Idade (anos)'))
             ax.set_ylabel(params.get('label_y', 'Escola | Turma'))
 
             fig.tight_layout()
-            fig.savefig(path_save, dpi=100, bbox_inches='tight')
+
+            # Quebra o título para não ultrapassar a largura da figura (senão a imagem inteira é reduzida no navegador)
+            titulo = params.get('titulo', 'Distribuição de Idade por Escola e Turma')
+            fig.suptitle(textwrap.fill(titulo, width=90), fontsize=16, y=1.0, va='bottom')
+
+            # dpi=200 para nitidez; o CSS exibe a imagem em 1200 px (metade dos pixels)
+            fig.savefig(path_save, dpi=200, bbox_inches='tight')
             self._limpar_memoria()
 
         except Exception as e:
