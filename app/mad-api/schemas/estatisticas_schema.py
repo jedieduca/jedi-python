@@ -1,5 +1,6 @@
 from typing import Optional, List, Dict, Any, Union
-from pydantic import BaseModel, ConfigDict
+from fastapi import Query
+from pydantic import BaseModel, ConfigDict, Field
 from decimal import Decimal
 from datetime import date
 
@@ -16,7 +17,8 @@ class EstisticaAvaliacaoFilterSchema(BaseModel):
         
     id: Optional[int] = None
     escola: Optional[str] = None
-    turma: Optional[str] = None
+    # Lista: aceita ?turma=A&turma=B (professor com várias turmas); Query() faz o FastAPI ler da URL
+    turma: Optional[List[str]] = Field(Query(None))
 
 class EstatisticaCategoriaTurmaSchema(BaseModel):
 
@@ -31,7 +33,8 @@ class EstisticaCategoriaFilterSchema(BaseModel):
         
     id: Optional[int] = None
     escola: Optional[str] = None
-    turma: Optional[str] = None
+    # Lista: aceita ?turma=A&turma=B (professor com várias turmas); Query() faz o FastAPI ler da URL
+    turma: Optional[List[str]] = Field(Query(None))
     categoria: Optional[str] = None
 
 class EstatisticaPartidaTurmaSchema(BaseModel):
@@ -46,7 +49,8 @@ class EstatisticaPartidaFilterSchema(BaseModel):
 
     id: Optional[int] = None
     escola: Optional[str] = None
-    turma: Optional[str] = None
+    # Lista: aceita ?turma=A&turma=B (professor com várias turmas); Query() faz o FastAPI ler da URL
+    turma: Optional[List[str]] = Field(Query(None))
  
 class DistribuicaoNotociaCategoriaSchema(BaseModel):
 
@@ -62,11 +66,21 @@ class DistribuicaoNotociaCategoriaFilterSchema(BaseModel):
     id: Optional[int] = None
     categoria: Optional[str] = None
 
-class RankingMatchesFilterSchema(BaseModel):
+class RankingPartidasSchema(BaseModel):
 
     id: Optional[int] = None
     escola: Optional[str] = None
     turma: Optional[str] = None
+    aluno: Optional[str] = None
+    dt_jogo: Optional[str] = None
+    numero_partidas: Decimal
+
+class RankingMatchesFilterSchema(BaseModel):
+
+    id: Optional[int] = None
+    escola: Optional[str] = None
+    # Lista: aceita ?turma=A&turma=B (professor com várias turmas); Query() faz o FastAPI ler da URL
+    turma: Optional[List[str]] = Field(Query(None))
     dt_jogo_ini: Optional[date] = None
     dt_jogo_fim: Optional[date] = None
 
@@ -93,7 +107,8 @@ class CapacidadeCriticaSchema(BaseModel):
 class CapacidadeCriticaFilterSchema(BaseModel):
     id: Optional[int] = None
     escola: Optional[str] = None
-    turma: Optional[str] = None
+    # Lista: aceita ?turma=A&turma=B (professor com várias turmas); Query() faz o FastAPI ler da URL
+    turma: Optional[List[str]] = Field(Query(None))
     dt_jogo_ini: Optional[date] = None
     dt_jogo_fim: Optional[date] = None
     capacidade_critica: Optional[str] = None
@@ -108,7 +123,8 @@ class AnaliseIdadeSchema(BaseModel):
 class AnaliseIdadeFilterSchema(BaseModel):
     id: Optional[int] = None
     escola: Optional[str] = None
-    turma: Optional[str] = None
+    # Lista: aceita ?turma=A&turma=B (professor com várias turmas); Query() faz o FastAPI ler da URL
+    turma: Optional[List[str]] = Field(Query(None))
 
 class RespostaEstatisticaSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -121,7 +137,7 @@ class RespostaEstatisticaSchema(BaseModel):
         EstatisticaPartidaTurmaSchema, 
         DistribuicaoNotociaCategoriaSchema,
         AnaliseIdadeSchema,
-        RankingMatchesFilterSchema,
+        RankingPartidasSchema,
         PerfilEscolaSchema,
         CapacidadeCriticaSchema,
     ]]

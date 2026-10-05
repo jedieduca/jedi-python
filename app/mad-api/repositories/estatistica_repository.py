@@ -24,7 +24,7 @@ class EstatisticaRepository:
             if filters.escola:
                 query = query.where(VwEstatisticaAvaliacoesModel.escola == filters.escola)
             if filters.turma:
-                query = query.where(VwEstatisticaAvaliacoesModel.turma == filters.turma)
+                query = query.where(VwEstatisticaAvaliacoesModel.turma.in_(filters.turma))
             
         result = await self.db.execute(query)
         
@@ -39,7 +39,7 @@ class EstatisticaRepository:
             if filters.escola:
                 query = query.where(VwEstatisticaCategoriaTurmaModel.escola == filters.escola)
             if filters.turma:
-                query = query.where(VwEstatisticaCategoriaTurmaModel.turma == filters.turma)
+                query = query.where(VwEstatisticaCategoriaTurmaModel.turma.in_(filters.turma))
             if filters.categoria:
                 query = query.where(VwEstatisticaCategoriaTurmaModel.categoria == filters.categoria)
         
@@ -56,7 +56,7 @@ class EstatisticaRepository:
             if filters.escola:
                 query = query.where(VwEstatisticaPartidaTurmaModel.escola == filters.escola)
             if filters.turma:
-                query = query.where(VwEstatisticaPartidaTurmaModel.turma == filters.turma)
+                query = query.where(VwEstatisticaPartidaTurmaModel.turma.in_(filters.turma))
             
         result = await self.db.execute(query)
         
@@ -84,7 +84,7 @@ class EstatisticaRepository:
             if filters.escola:
                 query = query.where(VwNumeroPartidasModel.escola == filters.escola)
             if filters.turma:
-                query = query.where(VwNumeroPartidasModel.turma == filters.turma)
+                query = query.where(VwNumeroPartidasModel.turma.in_(filters.turma))
             if filters.dt_jogo_ini:
                 query = query.where(VwNumeroPartidasModel.dt_jogo >= filters.dt_jogo_ini)
             if filters.dt_jogo_fim:
@@ -115,7 +115,7 @@ class EstatisticaRepository:
             if filters.escola:
                 query = query.where(VwAprioriModel.escola == filters.escola)
             if filters.turma:
-                query = query.where(VwAprioriModel.turma == filters.turma)
+                query = query.where(VwAprioriModel.turma.in_(filters.turma))
             if filters.dt_jogo_ini:
                 query = query.where(VwAprioriModel.dt_jogo >= filters.dt_jogo_ini)
             if filters.dt_jogo_fim:
@@ -135,7 +135,7 @@ class EstatisticaRepository:
             if filters.escola:
                 query = query.where(VwAnaliseIdadeModel.escola == filters.escola)
             if filters.turma:
-                query = query.where(VwAnaliseIdadeModel.turma == filters.turma)
+                query = query.where(VwAnaliseIdadeModel.turma.in_(filters.turma))
 
         result = await self.db.execute(query)
         return result.scalars().all()

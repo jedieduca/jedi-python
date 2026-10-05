@@ -84,6 +84,10 @@ class DataProcessingService:
         for campo, valor in filtros_dict.items():
             # Ignora valores vazios ou strings como "Todos"
             if valor and str(valor).lower() != "todos":
+                # Listas (ex.: várias turmas do professor) viram "A, B, C"
+                if isinstance(valor, (list, tuple)):
+                    valor = ", ".join(str(v) for v in valor)
+
                 # Formata o nome do campo (ex: 'fx_idade' -> 'Fx Idade')
                 label = campo.replace('_', ' ').capitalize()
                 parts.append(f"{label}: {valor}")
