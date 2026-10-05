@@ -9,7 +9,7 @@ class RegrasRepository:
     async def get_dados_mineracao(self, filters):
         """Busca todos os registros da view para processamento de regras."""
         async with self.db as session:
-            query = select(VwAprioriModel)
+            query = select(*VwAprioriModel.__table__.columns)
 
             if filters.escola:
                 query = query.where(VwAprioriModel.escola == filters.escola)
@@ -20,7 +20,8 @@ class RegrasRepository:
             if filters.nome:
                 query = query.where(VwAprioriModel.nome == filters.nome)
 
+            query = query.order_by(*VwAprioriModel.__table__.columns)
             result = await session.execute(query)
             
-            # Retorna scalars únicos para evitar duplicidade de objetos SQLAlchemy
-            return result.scalars().unique().all()
+            # Retorna cada linha da view como dict (sem colapsar por id)
+            return [dict(row) for row in result.mappings().all()]

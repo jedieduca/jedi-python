@@ -23,8 +23,10 @@ class DataProcessingService:
 
             data = []
             for item in lista_modelos:
+                if isinstance(item, dict):
+                    data.append(item)
                 # Lógica para Pydantic V2 ou V1
-                if hasattr(item, 'model_dump'):
+                elif hasattr(item, 'model_dump'):
                     data.append(item.model_dump())
                 elif hasattr(item, 'dict'):
                     data.append(item.dict())
