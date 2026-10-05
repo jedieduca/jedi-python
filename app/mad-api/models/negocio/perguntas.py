@@ -19,7 +19,12 @@ class PerguntasModel(settings.DBBaseModelJEDi):
     numero_palavras = Column(Integer)
     numero_caracteres = Column(Integer)
     analise_proposta = Column(Text)
+    analise_gpt = Column(Text)
+    origem_analise = Column(String(50))
     fala_proposta = Column(Text)
+    publica = Column(Integer)
+    origem_fala = Column(Integer)
+
 
     # Relacionamentos
     categorias_vinculadas = relationship("PerguntasCategoriasModel", back_populates="pergunta")

@@ -24,9 +24,11 @@ class NuvemPalavrasRepository:
         # Aplicação dos filtros
         query = query.where(
             PerguntasModel.analise_proposta.isnot(None),
-            func.trim(PerguntasModel.analise_proposta) != '',
+            PerguntasModel.analise_gpt.isnot(None),
+            PerguntasModel.origem_analise.isnot(None),
             PerguntasModel.fala_proposta.isnot(None),
-            func.trim(PerguntasModel.fala_proposta) != ''
+            PerguntasModel.publica == 1,
+            PerguntasModel.origem_fala == 1,
         )
         if filters.categoria:
             query = query.where(CategoriaModel.descricao == filters.categoria)
