@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Literal
 from pydantic import BaseModel
 from datetime import date
 from decimal import Decimal
@@ -36,9 +36,17 @@ class RegrasAssociacaorFilterSchema(BaseModel):
     turma: Optional[str] = None
     nome: Optional[str] = None
     capacidade_critica: Optional[str] = None
+    # Filtros aplicados sobre as regras mineradas, antes da geração dos gráficos
+    antecedente: Optional[str] = None
+    consequente: Optional[str] = None
+    suporte_min: Optional[float] = None
+    confianca_min: Optional[float] = None
+    lift_min: Optional[float] = None
 
 # Representa o objeto de retorno final da rota
 class RespostaApriorSchema(BaseModel):
     total_regras: int
     links_imagens: Dict[str, str]
     regras: List[RegrasAssociacaoSchema]
+    nivel: Literal["sucesso", "info", "warning"] = "sucesso"
+    mensagem: Optional[str] = None

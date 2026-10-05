@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, Literal
 from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field
 from decimal import Decimal
@@ -141,3 +141,5 @@ class RespostaEstatisticaSchema(BaseModel):
         PerfilEscolaSchema,
         CapacidadeCriticaSchema,
     ]]
+    nivel: Literal["sucesso", "info", "warning"] = "sucesso"
+    mensagem: Optional[str] = None

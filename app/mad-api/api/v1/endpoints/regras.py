@@ -11,6 +11,10 @@ from core.configs import settings
 
 router = APIRouter(redirect_slashes=False)
 
+# Resposta 200 sem dados: o cliente exibe a mensagem como aviso, não como erro
+def resposta_vazia(mensagem: str, nivel: str = 'info') -> dict:
+    return {"total_regras": 0, "links_imagens": {}, "regras": [], "nivel": nivel, "mensagem": mensagem}
+
 # GET Regras
 @router.get('', status_code=status.HTTP_200_OK, response_model=RespostaApriorSchema)
 async def get_rules(
@@ -26,14 +30,14 @@ async def get_rules(
         
         # Chama a camada de dados de forma isolada
         data = await repo.get_dados_mineracao(filters)
-        
-        regras, links_imagens = await service.processar_regras_associacao(data)
+
+        if not data:
+            return resposta_vazia('Nenhum registro encontrado para os filtros selecionados.')
+
+        regras, links_imagens = await service.processar_regras_associacao(data, filters)
 
         if not regras:
-            raise HTTPException(
-                detail='Nenhuma regra encontrada para os parâmetros atuais...', 
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+            return resposta_vazia('Nenhuma regra de associação encontrada para os parâmetros atuais.')
 
         # Formatação de URLs de saída
         base_url = settings.URL_BASE
@@ -48,5 +52,7 @@ async def get_rules(
             "links_imagens": links_formatados,
             "regras": regras
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

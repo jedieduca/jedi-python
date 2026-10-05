@@ -35,7 +35,15 @@ async def get_palavras(
         registros = await repo.get_perguntas_para_nuvem(filters)
         
         if not registros:
-            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+            # Resposta 200 sem dados: o cliente exibe a mensagem como aviso, não como erro
+            return {
+                "total_registros": 0,
+                "dados": [],
+                "texto_completo": "",
+                "link_grafico": {},
+                "nivel": "info",
+                "mensagem": "Nenhum registro encontrado para os filtros selecionados."
+            }
         
         # 2. Processa a lógica via Serviço
         service = NuvemPalavarasService()

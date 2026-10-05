@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.negocio.perguntas import PerguntasModel
@@ -13,12 +14,20 @@ class NuvemPalavrasRepository:
             PerguntasModel.id,
             PerguntasModel.pergunta,
             PerguntasModel.resp_certa,
+            PerguntasModel.analise_proposta,
+            PerguntasModel.fala_proposta,
             CategoriaModel.descricao.label('categoria')
         )
         .join(PerguntasCategoriasModel, PerguntasModel.id == PerguntasCategoriasModel.id_pergunta)
         .join(CategoriaModel, PerguntasCategoriasModel.id_categoria == CategoriaModel.id))
 
         # Aplicação dos filtros
+        query = query.where(
+            PerguntasModel.analise_proposta.isnot(None),
+            func.trim(PerguntasModel.analise_proposta) != '',
+            PerguntasModel.fala_proposta.isnot(None),
+            func.trim(PerguntasModel.fala_proposta) != ''
+        )
         if filters.categoria:
             query = query.where(CategoriaModel.descricao == filters.categoria)
         if filters.resp_certa:

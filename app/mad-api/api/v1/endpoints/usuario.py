@@ -18,6 +18,8 @@ router = APIRouter()
 def get_logado(usuario_logado: UsuarioModel = Depends(get_current_user)):
     try:
         return usuario_logado
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
@@ -40,6 +42,8 @@ async def post_usuario(usuario: UsuarioSchemaCreate, db: AsyncSession = Depends(
             except IntegrityError :
                 raise HTTPException(detail='Já existe um usuário cadastrado com esse e-mail.', status_code=status.HTTP_406_NOT_ACCEPTABLE) 
         return novo_usuario
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -53,6 +57,8 @@ async def get_usuarios(db: AsyncSession = Depends(get_session)):
             usuarios: List[UsuarioSchemaBase] = result.scalars().unique().all()
             
             return usuarios
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -70,6 +76,8 @@ async def get_usuario(usuario_id: int, db: AsyncSession = Depends(get_session)):
                 return usuario
             else:
                 raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -100,13 +108,15 @@ async def put_usuario(usuario_id: int, usuario: UsuarioSchemaUp, db: AsyncSessio
                 return usuario_up
             else:
                 raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
 
 #DELETE usuário
 @router.delete('/{usuario_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_usuario(usuario_id: int, usuario: UsuarioSchemaUp, db: AsyncSession = Depends(get_session)):
+async def delete_usuario(usuario_id: int, db: AsyncSession = Depends(get_session)):
     try:
         async with db as session:
             query = select(UsuarioModel).filter(UsuarioModel.id == usuario_id)
@@ -114,11 +124,13 @@ async def delete_usuario(usuario_id: int, usuario: UsuarioSchemaUp, db: AsyncSes
             usuario_del: UsuarioSchemaBase = result.scalars().unique().one_or_none()
             
             if usuario_del:
-                await session.delete()
+                await session.delete(usuario_del)
                 await session.commit()
                 return Response(status_code=status.HTTP_204_NO_CONTENT)
             else:
                 raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -141,6 +153,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
                 },
                 status_code=status.HTTP_200_OK
             )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
         

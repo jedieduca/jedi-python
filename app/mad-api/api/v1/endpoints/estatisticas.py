@@ -22,6 +22,11 @@ from core.configs import settings
 
 router = APIRouter()
 
+# Resposta 200 sem dados: o cliente exibe a mensagem como aviso, não como erro
+def resposta_vazia(mensagem: str = 'Nenhum registro encontrado para os filtros selecionados.',
+                   nivel: str = 'info') -> dict:
+    return {"total": 0, "link_imagem": {}, "dados": [], "nivel": nivel, "mensagem": mensagem}
+
 # GET Estatísticas por Avaliação
 @router.get('/avaliacao', status_code=status.HTTP_200_OK, response_model=RespostaEstatisticaSchema)
 async def get_avaliacoes(
@@ -38,7 +43,7 @@ async def get_avaliacoes(
         data = await repo.get_avaliacoes_filtradas(filters)
 
         if not data:
-            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+            return resposta_vazia()
     
         path_relativo = "static/estatisticas/img/acertos_avaliacao.jpg"
       
@@ -77,7 +82,7 @@ async def get_categoria_turma(
         data = await repo.get_categorias_filtradas(filters)     
                    
         if not data:
-            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+            return resposta_vazia()
         
         # Define o caminho onde a imagem será salva
         path_relativo = "static/estatisticas/img/categoria_turma.jpg"
@@ -117,7 +122,7 @@ async def get_partida_escola(
         data = await repo.get_partidas_filtradas(filters)
         
         if not data:
-            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+            return resposta_vazia()
 
         # Caminho do arquivo
         path_relativo = "static/estatisticas/img/partida_escola.jpg"
@@ -157,7 +162,7 @@ async def get_perfil_noticia(
         data = await repo.get_perfil_noticias_filtradas(filters)      
         
         if not data:
-            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+            return resposta_vazia()
         
         # Caminho onde a imagem será salva
         path_relativo = "static/estatisticas/img/perfil_noticia.jpg"
@@ -194,7 +199,7 @@ async def get_ranking_partidas(
         data = await repo.get_ranking_partidas_aluno(filters)
         
         if not data:
-            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+            return resposta_vazia()
 
         path_relativo = "static/estatisticas/img/ranking_partidas.jpg"
         
@@ -228,7 +233,7 @@ async def get_perfil_escolas(
         data = await repo.get_perfil_escolas_filtradas(filters)
         
         if not data:
-            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+            return resposta_vazia()
 
         path_relativo = "static/estatisticas/img/perfil_escolas.jpg"
         
@@ -262,7 +267,7 @@ async def get_capacidade_critica(
         data = await repo.get_capacidade_critica_filtrada(filters)
         
         if not data:
-            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+            return resposta_vazia()
 
         path_relativo = "static/estatisticas/img/capacidade_critica.jpg"
         
@@ -296,11 +301,11 @@ async def get_analise_idade(
         data = await repo.get_analise_idade_filtrada(filters)
 
         if not data:
-            raise HTTPException(detail='Não foi possível gerar os dados.', status_code=status.HTTP_404_NOT_FOUND)
+            return resposta_vazia()
 
         # O boxplot precisa de pelo menos um jogador com idade informada
         if all(item.idade is None for item in data):
-            raise HTTPException(detail='Nenhum jogador com idade informada para os filtros selecionados.', status_code=status.HTTP_404_NOT_FOUND)
+            return resposta_vazia('Nenhum jogador com idade informada para os filtros selecionados.', nivel='warning')
 
         path_relativo = "static/estatisticas/img/analise_idade.jpg"
 

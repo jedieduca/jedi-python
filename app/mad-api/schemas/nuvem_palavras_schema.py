@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Literal
 from pydantic import BaseModel, ConfigDict
 from datetime import date
 from decimal import Decimal
@@ -30,6 +30,8 @@ class NuvemItemSchema(BaseModel):
     id: int
     pergunta: str
     resp_certa: Optional[str] = None
+    analise_proposta: str
+    fala_proposta: str    
     categoria: str
 
 class NuvemPalavraSchema(BaseModel):
@@ -38,3 +40,5 @@ class NuvemPalavraSchema(BaseModel):
     dados: List[NuvemItemSchema]
     texto_completo: str
     link_grafico: Dict[str, str]
+    nivel: Literal["sucesso", "info", "warning"] = "sucesso"
+    mensagem: Optional[str] = None

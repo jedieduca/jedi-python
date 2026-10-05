@@ -18,6 +18,8 @@ class PerguntasModel(settings.DBBaseModelJEDi):
     tempo_leitura_infantil = Column(Integer, default=0)
     numero_palavras = Column(Integer)
     numero_caracteres = Column(Integer)
+    analise_proposta = Column(Text)
+    fala_proposta = Column(Text)
 
     # Relacionamentos
     categorias_vinculadas = relationship("PerguntasCategoriasModel", back_populates="pergunta")
