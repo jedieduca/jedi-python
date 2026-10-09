@@ -2,6 +2,7 @@ from typing import List, Dict, Tuple, Any
 from wordcloud import WordCloud
 import pandas as pd
 from services.data_processing import DataProcessingService
+from services.arquivos_graficos import caminho_unico
 from api.v1.endpoints.utils.ChartGenerator import chart_tool
 
 service = DataProcessingService()
@@ -160,7 +161,7 @@ class GraficosService:
             df_regras['regra_formatada'] = df_regras.apply(service.formata_regra_amigavel, axis=1)
             
             # Gerar Gráfico de Dispersão (Todas as Regras)
-            path_scatter = "static/regras/img/regras_dispersao.png"
+            path_scatter = caminho_unico("static/regras/img/regras_dispersao.png")
             await chart_tool.plot_scatter(
                 df=df_regras,
                 path_save=path_scatter,
@@ -175,7 +176,7 @@ class GraficosService:
             
             # Gerar Gráfico Top 10 (Baseado no Lift)
             df_top10 = df_regras.nlargest(10, 'lift')
-            path_top10 = "static/regras/img/regras_top10.png"
+            path_top10 = caminho_unico("static/regras/img/regras_top10.png")
             await chart_tool.plot_horizontal_bars(
                 df=df_top10,
                 path_save=path_top10,

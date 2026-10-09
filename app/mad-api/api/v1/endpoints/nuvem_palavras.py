@@ -13,6 +13,7 @@ from schemas.nuvem_palavras_schema import (
     NuvemPalavraSchema
 )
 from services.nuvem_palavras import NuvemPalavarasService
+from services.arquivos_graficos import caminho_unico
 
 from core.deps import get_session_JEDi, get_current_user
 from core.configs import settings
@@ -47,7 +48,7 @@ async def get_palavras(
         
         # 2. Processa a lógica via Serviço
         service = NuvemPalavarasService()
-        path_relativo = "static/estatisticas/img/nuvem_questoes.jpg"
+        path_relativo = caminho_unico("static/estatisticas/img/nuvem_questoes.jpg")
         texto_original = await service.processar_texto_e_gerar_nuvem(registros, path_relativo)
 
         '''

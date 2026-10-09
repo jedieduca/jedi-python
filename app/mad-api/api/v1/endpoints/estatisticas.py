@@ -16,6 +16,7 @@ from schemas.estatisticas_schema import (
     AutoavaliacaoJogoFilterSchema,
 )
 from services.graficos import GraficosService
+from services.arquivos_graficos import caminho_unico
 from repositories.estatistica_repository import EstatisticaRepository
 
 from core.deps import get_session_JEDi, get_current_user
@@ -46,7 +47,7 @@ async def get_avaliacoes(
         if not data:
             return resposta_vazia()
     
-        path_relativo = "static/estatisticas/img/acertos_avaliacao.jpg"
+        path_relativo = caminho_unico("static/estatisticas/img/acertos_avaliacao.jpg")
       
         await GraficosService.criar_grafico_avaliacao(data, path_relativo, filters)
         
@@ -86,7 +87,7 @@ async def get_categoria_turma(
             return resposta_vazia()
         
         # Define o caminho onde a imagem será salva
-        path_relativo = "static/estatisticas/img/categoria_turma.jpg"
+        path_relativo = caminho_unico("static/estatisticas/img/categoria_turma.jpg")
      
         await GraficosService.criar_grafico_categoria(data, path_relativo, filters)
 
@@ -126,7 +127,7 @@ async def get_partida_escola(
             return resposta_vazia()
 
         # Caminho do arquivo
-        path_relativo = "static/estatisticas/img/partida_escola.jpg"
+        path_relativo = caminho_unico("static/estatisticas/img/partida_escola.jpg")
         
         await GraficosService.criar_grafico_partida(data, path_relativo, filters)
 
@@ -166,7 +167,7 @@ async def get_perfil_noticia(
             return resposta_vazia()
         
         # Caminho onde a imagem será salva
-        path_relativo = "static/estatisticas/img/perfil_noticia.jpg"
+        path_relativo = caminho_unico("static/estatisticas/img/perfil_noticia.jpg")
         
         await GraficosService.criar_grafico_perfil(data, path_relativo, filters)
         
@@ -202,7 +203,7 @@ async def get_ranking_partidas(
         if not data:
             return resposta_vazia()
 
-        path_relativo = "static/estatisticas/img/ranking_partidas.jpg"
+        path_relativo = caminho_unico("static/estatisticas/img/ranking_partidas.jpg")
         
         await GraficosService.criar_grafico_ranking_partidas(data, path_relativo)
 
@@ -236,7 +237,7 @@ async def get_perfil_escolas(
         if not data:
             return resposta_vazia()
 
-        path_relativo = "static/estatisticas/img/perfil_escolas.jpg"
+        path_relativo = caminho_unico("static/estatisticas/img/perfil_escolas.jpg")
         
         await GraficosService.criar_grafico_perfil_escolas(data, path_relativo, filters)
 
@@ -270,7 +271,7 @@ async def get_capacidade_critica(
         if not data:
             return resposta_vazia()
 
-        path_relativo = "static/estatisticas/img/capacidade_critica.jpg"
+        path_relativo = caminho_unico("static/estatisticas/img/capacidade_critica.jpg")
         
         await GraficosService.criar_grafico_capacidade_critica(data, path_relativo, filters)
 
@@ -308,7 +309,7 @@ async def get_analise_idade(
         if all(item.idade is None for item in data):
             return resposta_vazia('Nenhum jogador com idade informada para os filtros selecionados.', nivel='warning')
 
-        path_relativo = "static/estatisticas/img/analise_idade.jpg"
+        path_relativo = caminho_unico("static/estatisticas/img/analise_idade.jpg")
 
         await GraficosService.criar_grafico_analise_idade(data, path_relativo, filters)
 
@@ -342,7 +343,7 @@ async def get_autoavaliacao_jogo(
         if not data:
             return resposta_vazia()
 
-        path_relativo = "static/estatisticas/img/autoavaliacao_jogo.jpg"
+        path_relativo = caminho_unico("static/estatisticas/img/autoavaliacao_jogo.jpg")
 
         await GraficosService.criar_grafico_autoavaliacao_jogo(data, path_relativo, filters)
 
