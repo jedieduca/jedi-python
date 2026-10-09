@@ -852,7 +852,15 @@ class ChartGenerator:
                 df_outliers = df.iloc[0:0]
 
             # Altura proporcional ao número de caixas
-            altura = max(5, len(ordem) * 0.6)
+            # Turmas sem caixa (Q1 = Q3: mais da metade com a mesma idade) recebem a etiqueta "X% com N anos"
+            # sob a linha; nesse caso cada turma precisa de mais altura para a etiqueta não encostar na de baixo
+            sem_caixa = []
+            for rotulo in ordem:
+                idades = df[df[col_y] == rotulo][col_x]
+                if len(idades) > 1 and idades.quantile(0.25) == idades.quantile(0.75):
+                    sem_caixa.append(rotulo)
+
+            altura = max(5, len(ordem) * (1.2 if sem_caixa else 0.9))
             fig, ax = plt.subplots(figsize=(12, altura))
 
             # Caixas: quartis, mediana e bigodes (calculados com TODOS os pontos)
@@ -862,30 +870,48 @@ class ChartGenerator:
                 y=col_y,
                 order=ordem,
                 color=params.get('cor', '#3498db'),
-                width=0.6,
+                width=0.75,
                 showfliers=False,
                 boxprops=dict(alpha=0.35),
                 medianprops=dict(color='#1f3a5f', linewidth=2),
                 ax=ax
             )
 
-            # Pontos normais com espalhamento vertical
-            sns.stripplot(
-                data=df_normais,
-                x=col_x,
-                y=col_y,
-                order=ordem,
-                color='#2c3e50',
-                size=4,
-                alpha=0.5,
-                jitter=0.2,
-                ax=ax
-            )
+            posicoes = {rotulo: i for i, rotulo in enumerate(ordem)}
+
+            # Pontos normais: um círculo por idade, com tamanho e número = quantidade de alunos
+            # (idades são inteiras: pontos individuais ficariam empilhados e não daria para contar)
+            contagem = df_normais.groupby([col_y, col_x]).size().reset_index(name='qtd')
+            for _, row in contagem.iterrows():
+                y = posicoes[row[col_y]]
+                ax.scatter(
+                    row[col_x], y,
+                    s=120 + row['qtd'] * 55,
+                    color='#2c3e50',
+                    alpha=0.55,
+                    edgecolor='white',
+                    linewidth=1.5,
+                    zorder=3
+                )
+                ax.annotate(
+                    str(row['qtd']),
+                    (row[col_x], y),
+                    ha='center',
+                    va='center',
+                    fontsize=9,
+                    fontweight='bold',
+                    color='white',
+                    zorder=4
+                )
+
+            # Zoom do eixo X na faixa dos pontos normais: idades extremas (em geral erro de cadastro,
+            # como 0 ou 116 anos) esticariam o eixo e espremeriam as caixas num canto
+            base = df_normais[col_x] if not df_normais.empty else df[col_x]
+            x_min, x_max = base.min() - 2, base.max() + 2
+            ax.set_xlim(x_min, x_max)
 
             # Outliers: sem espalhamento, agrupados por (grupo, idade) e rotulados com os ids
             if not df_outliers.empty and col_id:
-                posicoes = {rotulo: i for i, rotulo in enumerate(ordem)}
-
                 def juntar_ids(ids, limite=5):
                     ids = sorted(int(i) for i in ids)
                     texto = ', '.join(str(i) for i in ids[:limite])
@@ -899,29 +925,74 @@ class ChartGenerator:
                     .reset_index()
                 )
 
-                for idx, row in agrupado.iterrows():
-                    y = posicoes[row[col_y]]
-                    ax.scatter(
-                        row[col_x], y,
-                        s=60,
-                        color='#e74c3c',
-                        edgecolor='white',
-                        linewidth=1.5,
-                        zorder=3,
-                        label='Outlier (id do jogador)' if idx == 0 else None
-                    )
-                    ax.annotate(
-                        f"id: {row[col_id]}",
-                        (row[col_x], y),
-                        xytext=(0, 9),
-                        textcoords='offset points',
-                        ha='center',
-                        va='bottom',
-                        fontsize=10,
-                        color='#333333'
-                    )
+                # Pontos a desenhar por turma: [x, marcador, textos]. Fora da faixa do eixo, o outlier vai
+                # para a borda com seta e a idade real no rótulo; os da mesma borda viram um único ponto
+                pontos = {}
+                for _, row in agrupado.iterrows():
+                    idade = row[col_x]
+                    if idade < x_min:
+                        chave, x_plot, marcador = 'esquerda', x_min + 0.3, '<'
+                    elif idade > x_max:
+                        chave, x_plot, marcador = 'direita', x_max - 0.3, '>'
+                    else:
+                        chave, x_plot, marcador = idade, idade, 'o'
+
+                    texto = row[col_id] if marcador == 'o' else f"{row[col_id]} ({idade:.0f} anos)"
+                    turma = pontos.setdefault(posicoes[row[col_y]], {})
+                    if chave in turma:
+                        turma[chave][2].append(texto)
+                    else:
+                        turma[chave] = [x_plot, marcador, [texto]]
+
+                primeiro = True
+                for y, turma in pontos.items():
+                    # Rótulos da mesma turma alternam acima/abaixo do ponto, para não se encostarem
+                    for i, (x_plot, marcador, textos) in enumerate(sorted(turma.values(), key=lambda p: p[0])):
+                        ax.scatter(
+                            x_plot, y,
+                            marker=marcador,
+                            s=60 if marcador == 'o' else 110,
+                            color='#e74c3c',
+                            edgecolor='white',
+                            linewidth=1.5,
+                            zorder=5,
+                            label='Outlier (id do jogador)' if primeiro else None
+                        )
+                        primeiro = False
+
+                        acima = i % 2 == 0
+                        ax.annotate(
+                            "id: " + "; ".join(textos),
+                            (x_plot, y),
+                            xytext=(0, 12 if acima else -12),
+                            textcoords='offset points',
+                            # Nas bordas o texto cresce para dentro do gráfico
+                            ha={'<': 'left', '>': 'right'}.get(marcador, 'center'),
+                            va='bottom' if acima else 'top',
+                            fontsize=10,
+                            color='#333333'
+                        )
 
                 ax.legend(loc='lower right', frameon=True, facecolor='white', edgecolor='#cccccc')
+
+            # Turmas sem caixa: explica a linha no lugar da caixa
+            for rotulo in sem_caixa:
+                idades = df[df[col_y] == rotulo][col_x]
+                mediana = idades.median()
+                pct = (idades == mediana).mean() * 100
+                ax.annotate(
+                    f"{pct:.0f}% com {mediana:.0f} anos",
+                    (mediana, posicoes[rotulo]),
+                    xytext=(0, -26),
+                    textcoords='offset points',
+                    ha='center',
+                    va='top',
+                    fontsize=10,
+                    fontweight='bold',
+                    color='#1f3a5f',
+                    bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#1f3a5f', alpha=0.9),
+                    zorder=6
+                )
 
             # Idade é inteira: evita marcações como 11.5
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
