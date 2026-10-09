@@ -466,8 +466,13 @@ class ChartGenerator:
             # Garante a ordenação decrescente no DataFrame
             df_sorted = df.sort_values(by=params.get('x'), ascending=False)
             
-            num_itens = len(df_sorted)
-            altura_figura = max(6, num_itens * 0.5)
+            # Quebra os rótulos longos (Escola | Turma | Aluno) e reserva altura para todas as linhas,
+            # senão os rótulos de barras vizinhas se sobrepõem (uma barra por valor único, na ordem do seaborn)
+            rotulos = [textwrap.fill(str(r), width=45) for r in pd.unique(df_sorted[params.get('y')])]
+            num_itens = len(rotulos)
+            max_linhas = max((r.count('\n') + 1 for r in rotulos), default=1)
+            altura_barra = max(0.5, max_linhas * 0.2 + 0.15)   # ~0.2" por linha de texto + respiro
+            altura_figura = max(6, num_itens * altura_barra)
 
             fig, ax = plt.subplots(figsize=(12, altura_figura))
 
@@ -486,9 +491,8 @@ class ChartGenerator:
             max_val = df_sorted[params.get('x')].max() if not df_sorted.empty else 10
             ax.set_xlim(0, max_val * 1.15)
 
-            # Quebra os rótulos longos (Escola | Turma | Aluno) para não espremer a área das barras
             ax.set_yticks(ax.get_yticks())
-            ax.set_yticklabels([textwrap.fill(t.get_text(), width=45) for t in ax.get_yticklabels()])
+            ax.set_yticklabels(rotulos)
 
             ax.set_xlabel(params.get('label_x', 'Número de Partidas'))
             ax.set_ylabel(params.get('label_y', 'Aluno / Turma / Escola'))
