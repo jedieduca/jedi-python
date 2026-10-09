@@ -10,6 +10,7 @@ from models.vwnumero_partidas import VwNumeroPartidasModel
 from models.vwperfil_escolas import VwPerfilEscolasModel
 from models.vwapriori_model import VwAprioriModel
 from models.vwanalise_idade_model import VwAnaliseIdadeModel
+from models.vwestatistica_autoavaliacao_jogo_model import VwEstatisticaAutoavaliacaoJogoModel
 
 class EstatisticaRepository:
     def __init__(self, db: AsyncSession):
@@ -136,6 +137,28 @@ class EstatisticaRepository:
                 query = query.where(VwAnaliseIdadeModel.escola == filters.escola)
             if filters.turma:
                 query = query.where(VwAnaliseIdadeModel.turma.in_(filters.turma))
+
+        result = await self.db.execute(query)
+        return result.scalars().all()
+
+    async def get_autoavaliacao_jogo_filtrada(self, filters=None):
+        query = select(VwEstatisticaAutoavaliacaoJogoModel)
+
+        if filters:
+            if filters.id:
+                query = query.where(VwEstatisticaAutoavaliacaoJogoModel.id == filters.id)
+            if filters.escola:
+                query = query.where(VwEstatisticaAutoavaliacaoJogoModel.escola == filters.escola)
+            if filters.turma:
+                query = query.where(VwEstatisticaAutoavaliacaoJogoModel.turma.in_(filters.turma))
+
+        # Níveis sempre na ordem Noob → Proplayer, para o gráfico e o grid
+        query = query.order_by(
+            VwEstatisticaAutoavaliacaoJogoModel.escola,
+            VwEstatisticaAutoavaliacaoJogoModel.turma,
+            VwEstatisticaAutoavaliacaoJogoModel.ordem_auto,
+            VwEstatisticaAutoavaliacaoJogoModel.ordem_jogo,
+        )
 
         result = await self.db.execute(query)
         return result.scalars().all()

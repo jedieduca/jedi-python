@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import textwrap
+import math
 import numpy as np
 
 from matplotlib.ticker import MaxNLocator
@@ -941,6 +942,198 @@ class ChartGenerator:
         except Exception as e:
             print(f"Erro ao gerar gráfico de boxplot de idade: {e}")
             raise e
-        
+
+    async def plot_autoavaliacao_jogo_chart(self, df: pd.DataFrame, path_save: str, params: dict):
+        """Gera uma faixa por escola/turma. Para cada nível, duas colunas lado a lado, na escala
+        "% das partidas da turma": a autoavaliação (o grupo, na cor do nível) e a avaliação do jogo
+        para essas mesmas partidas (empilhada; os segmentos somam a altura da autoavaliação)."""
+        try:
+            self._limpar_memoria()
+
+            # Restaura o tema padrão (outros gráficos alteram o rc global do Seaborn)
+            sns.set_theme(style="white")
+
+            turmas = df[['escola', 'turma']].drop_duplicates().sort_values(['escola', 'turma'])
+            num_turmas = len(turmas)
+
+            if num_turmas == 0:
+                return
+
+            # 1. Níveis na ordem da view (1 Noob ... 5 Proplayer)
+            niveis = (
+                df[['ordem_jogo', 'avaliacao_jogo']].drop_duplicates()
+                .sort_values('ordem_jogo')['avaliacao_jogo'].tolist()
+            )
+
+            # 2. Uma cor fixa e distinta por nível (vermelho -> roxo); texto escuro nas cores claras
+            rampa = ['#e34948', '#eda100', '#1baf7a', '#2a78d6', '#4a3aa7']
+            rampa_texto = ['#111111', '#111111', '#111111', '#ffffff', '#ffffff']
+            cores = dict(zip(niveis, rampa))
+            cores_texto = dict(zip(niveis, rampa_texto))
+            cor_confirmou = '#111111'
+
+            handles = [Patch(facecolor=cores[n], edgecolor='white', label=f"{i} · {n}") for i, n in enumerate(niveis, start=1)]
+            handles.append(Patch(facecolor='white', edgecolor=cor_confirmou, linewidth=2, label='Mesmo nível (jogo = autoavaliação)'))
+
+            # Duas colunas por nível: autoavaliação à esquerda, avaliação do jogo à direita
+            largura = 0.36
+            desloc = 0.2
+
+            def maior_resto(qtds, total):
+                # Arredonda qtd/total em décimos de ponto percentual pelo método do maior resto,
+                # para que os rótulos somem exatamente 100,0%
+                exatos = [q * 1000 / total for q in qtds]
+                base = [math.floor(e) for e in exatos]
+                faltam = 1000 - sum(base)
+                ordem = sorted(range(len(qtds)), key=lambda i: exatos[i] - base[i], reverse=True)
+                for i in ordem[:faltam]:
+                    base[i] += 1
+                return [b / 10 for b in base]
+
+            # 3. Uma faixa por escola/turma, desenhada para 1200 px de largura
+            altura_faixa = 5.6
+            altura_fig = altura_faixa * num_turmas
+            fig, axes = plt.subplots(nrows=num_turmas, ncols=1, figsize=(12, altura_fig), squeeze=False)
+            axes = axes.flatten()
+
+            for idx, (_, row) in enumerate(turmas.iterrows()):
+                ax = axes[idx]
+                df_t = df[(df['escola'] == row['escola']) & (df['turma'] == row['turma'])]
+                total_turma = int(df_t['qtd'].sum())
+
+                # Percentuais exibidos: cada combinação (autoavaliação, jogo) arredondada pelo maior resto;
+                # a coluna "Autoaval." mostra a soma dos seus segmentos, então tudo fecha em 100,0%
+                celulas = df_t[df_t['qtd'] > 0]
+                pct_rotulo = dict(zip(
+                    zip(celulas['autoavaliacao'], celulas['avaliacao_jogo']),
+                    maior_resto(celulas['qtd'].astype(int).tolist(), total_turma)
+                ))
+
+                # Escala do eixo: o maior grupo + folga, arredondado para cima de 10 em 10
+                maior = max(df_t.loc[df_t['autoavaliacao'] == n, 'qtd'].sum() for n in niveis) / total_turma * 100
+                topo = max(10, math.ceil(maior * 1.15 / 10) * 10)
+                cabe_dentro = topo * 0.05   # altura mínima de um segmento para o texto caber dentro
+                espaco_rotulo = topo * 0.05  # distância mínima entre rótulos externos
+
+                rotulos_x = []
+                for pos, nivel_auto in enumerate(niveis):
+                    df_g = df_t[df_t['autoavaliacao'] == nivel_auto].sort_values('ordem_jogo')
+                    total = int(df_g['qtd'].sum())
+                    rotulos_x.append(f"{nivel_auto}\n(n = {total})")
+                    x_auto, x_jogo = pos - desloc, pos + desloc
+
+                    # Cabeçalho de cada coluna
+                    ax.text(x_auto, topo * 1.02, 'Autoaval.', ha='center', va='bottom', fontsize=9, color='#555555')
+                    ax.text(x_jogo, topo * 1.02, 'Jogo', ha='center', va='bottom', fontsize=9, color='#555555')
+
+                    # Grupo vazio: aviso na base, para manter os 5 níveis na mesma posição
+                    if total == 0:
+                        ax.text(pos, topo * 0.03, 'nenhuma partida\ncom autoavaliação\nneste nível',
+                                ha='center', va='bottom', fontsize=9, style='italic', color='#777777')
+                        continue
+
+                    # 4a. Autoavaliação: altura = % das partidas da turma; rótulo dentro, ou acima se a coluna for baixa
+                    altura_auto = total / total_turma * 100
+                    pct_auto = round(sum(v for (a, _), v in pct_rotulo.items() if a == nivel_auto), 1)
+                    ax.bar(x_auto, altura_auto, width=largura, color=cores[nivel_auto], edgecolor='white', linewidth=2, zorder=2)
+                    if altura_auto >= cabe_dentro:
+                        ax.text(x_auto, altura_auto / 2, f"{pct_auto:.1f}%", ha='center', va='center',
+                                fontsize=10, weight='bold', color=cores_texto[nivel_auto], zorder=4)
+                    else:
+                        ax.text(x_auto, altura_auto + topo * 0.01, f"{pct_auto:.1f}%", ha='center', va='bottom',
+                                fontsize=10, weight='bold', color='#333333', zorder=4)
+
+                    # 4b. Avaliação do jogo: segmentos de baixo (Noob) para cima (Proplayer), % das partidas da turma,
+                    #     com contorno escuro onde o jogo deu o mesmo nível
+                    base = 0
+                    externos = []  # segmentos baixos demais: rótulo vai para a direita da coluna
+                    for _, seg in df_g.iterrows():
+                        qtd = int(seg['qtd'])
+                        if qtd == 0:
+                            continue
+                        pct = qtd / total_turma * 100
+                        nivel_jogo = seg['avaliacao_jogo']
+                        confirmou = nivel_jogo == nivel_auto
+
+                        ax.bar(
+                            x_jogo, pct, bottom=base, width=largura,
+                            color=cores[nivel_jogo],
+                            edgecolor=cor_confirmou if confirmou else 'white',
+                            linewidth=2.5 if confirmou else 2,
+                            zorder=3 if confirmou else 2
+                        )
+                        if pct >= cabe_dentro:
+                            ax.text(x_jogo, base + pct / 2, f"{pct_rotulo[(nivel_auto, nivel_jogo)]:.1f}%", ha='center', va='center',
+                                    fontsize=10, weight='bold', color=cores_texto[nivel_jogo], zorder=4)
+                        else:
+                            externos.append((base + pct / 2, f"{pct_rotulo[(nivel_auto, nivel_jogo)]:.1f}%"))
+                        base += pct
+
+                    # 5. Rótulos externos: à direita da coluna, com linha guia; afastados para não se sobrepor
+                    y_anterior = -math.inf
+                    for y_seg, texto in externos:
+                        y_rot = max(y_seg, y_anterior + espaco_rotulo)
+                        y_anterior = y_rot
+                        ax.annotate(
+                            texto,
+                            xy=(x_jogo + largura / 2, y_seg),
+                            xytext=(x_jogo + largura / 2 + 0.06, y_rot),
+                            ha='left', va='center', fontsize=9.5, weight='bold', color='#333333',
+                            arrowprops=dict(arrowstyle='-', color='#888888', lw=0.8),
+                            zorder=4
+                        )
+
+                # Eixos: níveis embaixo, % das partidas da turma à esquerda, só a linha de base visível
+                ax.set_xticks(range(len(niveis)))
+                ax.set_xticklabels(rotulos_x, fontsize=11)
+                ax.set_xlim(-0.5, len(niveis) - 0.5)
+                ax.set_ylim(0, topo)
+                passo = 5 if topo <= 30 else 10
+                marcas = list(range(0, topo + 1, passo))
+                ax.set_yticks(marcas)
+                ax.set_yticklabels([f"{v}%" for v in marcas], fontsize=10, color='#555555')
+                ax.grid(axis='y', color='#e6e6e6', linewidth=0.8, zorder=0)
+                ax.set_axisbelow(True)
+                for lado in ['top', 'right', 'left']:
+                    ax.spines[lado].set_visible(False)
+                ax.tick_params(axis='x', length=0)
+
+                ax.set_title(
+                    f"{row['escola']} | Turma: {row['turma']}  (n = {total_turma} partidas)",
+                    loc='left', fontsize=13, weight='bold', color='#333333', pad=72
+                )
+                ax.set_xlabel('Níveis de Avaliação', fontsize=11, color='#555555', labelpad=8)
+
+                # Legenda repetida em cada escola/turma, logo abaixo do título da faixa
+                ax.legend(
+                    handles=handles,
+                    title='Níveis de Avaliação',
+                    loc='lower center',
+                    bbox_to_anchor=(0.5, 1.07),
+                    ncol=len(handles),
+                    fontsize=10,
+                    title_fontsize=11,
+                    frameon=False
+                )
+                ax.set_ylabel('% das partidas da turma', fontsize=11, color='#555555')
+
+            fig.tight_layout(h_pad=3)
+
+            # 6. Título geral acima da primeira faixa (a legenda se repete em cada faixa)
+            fig.suptitle(
+                textwrap.fill(params.get('titulo', 'Distribuição de Desempenho por Autoavaliação x Avaliação pelo JEDi'), width=90),
+                fontsize=16,
+                y=1 + 0.15 / altura_fig,
+                va='bottom'
+            )
+
+            # dpi=200 para nitidez; o CSS exibe a imagem com até 1200 px
+            fig.savefig(path_save, dpi=200, bbox_inches='tight')
+            self._limpar_memoria()
+
+        except Exception as e:
+            print(f"Erro ao gerar gráfico de autoavaliação × jogo: {e}")
+            raise e
+
 # --- Instância global para uso nos serviços ---
 chart_tool = ChartGenerator()

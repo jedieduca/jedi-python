@@ -126,6 +126,24 @@ class AnaliseIdadeFilterSchema(BaseModel):
     # Lista: aceita ?turma=A&turma=B (professor com várias turmas); Query() faz o FastAPI ler da URL
     turma: Optional[List[str]] = Field(Query(None))
 
+class AutoavaliacaoJogoSchema(BaseModel):
+    id: Optional[int] = None
+    escola: Optional[str]
+    turma: Optional[str]
+    ordem_auto: int
+    autoavaliacao: str
+    ordem_jogo: int
+    avaliacao_jogo: str
+    qtd: int
+    total_grupo: int
+    pct_no_grupo: Optional[Decimal] = None   # NULL quando ninguém se autoavaliou no nível
+
+class AutoavaliacaoJogoFilterSchema(BaseModel):
+    id: Optional[int] = None
+    escola: Optional[str] = None
+    # Lista: aceita ?turma=A&turma=B (professor com várias turmas); Query() faz o FastAPI ler da URL
+    turma: Optional[List[str]] = Field(Query(None))
+
 class RespostaEstatisticaSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
@@ -140,6 +158,7 @@ class RespostaEstatisticaSchema(BaseModel):
         RankingPartidasSchema,
         PerfilEscolaSchema,
         CapacidadeCriticaSchema,
+        AutoavaliacaoJogoSchema,
     ]]
     nivel: Literal["sucesso", "info", "warning"] = "sucesso"
     mensagem: Optional[str] = None

@@ -13,6 +13,7 @@ from schemas.estatisticas_schema import (
     PerfilEscolaFilterSchema,
     CapacidadeCriticaFilterSchema,
     AnaliseIdadeFilterSchema,
+    AutoavaliacaoJogoFilterSchema,
 )
 from services.graficos import GraficosService
 from repositories.estatistica_repository import EstatisticaRepository
@@ -315,6 +316,40 @@ async def get_analise_idade(
         timestamp = int(time.time())
         link = {
             "grafico_analise_idade": f"{base_url}/{path_relativo}?v={timestamp}"
+        }
+
+        return {
+            "total": len(data),
+            "link_imagem": link,
+            "dados": data
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@router.get('/autoavaliacao_jogo', status_code=status.HTTP_200_OK, response_model=RespostaEstatisticaSchema)
+async def get_autoavaliacao_jogo(
+    request: Request,
+    filters: AutoavaliacaoJogoFilterSchema = Depends(),
+    usuario_logado: UsuarioModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session_JEDi)
+):
+    try:
+        repo = EstatisticaRepository(db)
+        data = await repo.get_autoavaliacao_jogo_filtrada(filters)
+
+        if not data:
+            return resposta_vazia()
+
+        path_relativo = "static/estatisticas/img/autoavaliacao_jogo.jpg"
+
+        await GraficosService.criar_grafico_autoavaliacao_jogo(data, path_relativo, filters)
+
+        base_url = settings.URL_BASE
+        timestamp = int(time.time())
+        link = {
+            "grafico_autoavaliacao_jogo": f"{base_url}/{path_relativo}?v={timestamp}"
         }
 
         return {

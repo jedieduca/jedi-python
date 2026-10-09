@@ -365,3 +365,22 @@ class GraficosService:
         except Exception as e:
             print(f"Erro no serviço de gráficos de análise de idade: {e}")
             raise e
+
+    @staticmethod
+    async def criar_grafico_autoavaliacao_jogo(data, path: str, filters: Any = None):
+        try:
+            df = await service.transforma_em_dataframe(data)
+
+            # Decimal (vindo do banco) para inteiro
+            df['qtd'] = pd.to_numeric(df['qtd'], errors='coerce').fillna(0).astype(int)
+
+            titulo = await service.montar_titulo_com_filtros("Distribuição de Desempenho por Autoavaliação x Avaliação pelo JEDi", filters)
+
+            await chart_tool.plot_autoavaliacao_jogo_chart(
+                df=df,
+                path_save=path,
+                params={'titulo': titulo}
+            )
+        except Exception as e:
+            print(f"Erro no serviço de gráficos de autoavaliação × jogo: {e}")
+            raise e
