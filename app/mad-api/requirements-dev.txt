@@ -1,0 +1,20 @@
+# Ferramentas de análise e atualização: instaladas só no ambiente de desenvolvimento
+# (INSTALL_DEV=true no .env). Inclui todas as dependências de produção.
+-r requirements.txt
+
+Authlib==1.7.2
+bandit==1.9.4
+dparse==0.6.4
+filelock==3.32.7
+joserfc==1.7.7
+marshmallow==4.3.1
+pip-review==1.3.0
+pur==7.4.0
+PyYAML==6.0.3
+ruamel.yaml==0.19.1
+safety==3.8.1
+safety-schemas==0.0.16
+stevedore==5.9.1
+tenacity==9.2.1
+tomlkit==0.15.2
+truststore==0.10.5

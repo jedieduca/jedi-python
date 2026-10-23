@@ -27,17 +27,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     gfortran \
     libopenblas-dev \
-    && rm -rf /var/lib/apt/lists/*cd 
+    && rm -rf /var/lib/apt/lists/*
 
 # 🔹 DEFINE O CAMINHO EXATO QUE VOCÊ QUER DENTRO DO CONTAINER
 WORKDIR /app/mad-api
 
-# Copia o seu arquivo de requisitos local para dentro do caminho correto
-COPY app/mad-api/requirements.txt .
+# Copia os arquivos de requisitos (produção e desenvolvimento) para dentro do caminho correto
+COPY app/mad-api/requirements*.txt .
 
-# Atualiza e instala todas as dependências do seu requirements.txt
+# false (padrão): só as dependências de produção (requirements.txt)
+# true: inclui também as ferramentas de análise (requirements-dev.txt); defina INSTALL_DEV=true no .env do dev
+ARG INSTALL_DEV=false
+
+# Atualiza e instala as dependências conforme o ambiente
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir -r requirements.txt
+    && if [ "$INSTALL_DEV" = "true" ]; then \
+         pip install --no-cache-dir -r requirements-dev.txt; \
+       else \
+         pip install --no-cache-dir -r requirements.txt; \
+       fi
 
 # 🔹 COPIA O SEU CÓDIGO FONTE LOCAL DIRETAMENTE PARA A RAIZ /app/mad-api DO CONTAINER
 COPY app/mad-api/ .
